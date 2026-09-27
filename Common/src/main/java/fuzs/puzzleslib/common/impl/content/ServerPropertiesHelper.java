@@ -17,6 +17,8 @@ import java.util.Scanner;
 
 /**
  * Keep this separate to prevent early class loading issues from the mixin.
+ *
+ * @see DedicatedServerProperties
  */
 public final class ServerPropertiesHelper {
 
@@ -28,6 +30,7 @@ public final class ServerPropertiesHelper {
         return new DedicatedServerProperties(Settings.loadFromFile(path)) {
             DedicatedServerProperties setProperties() {
                 this.properties.put("online-mode", String.valueOf(false));
+                this.properties.put("white-list", String.valueOf(false));
                 this.properties.put("difficulty", Difficulty.HARD.getSerializedName());
                 this.properties.put("gamemode", GameType.CREATIVE.getSerializedName());
                 this.properties.put("max-players", String.valueOf(4));
@@ -46,7 +49,7 @@ public final class ServerPropertiesHelper {
                         input = hostAddress.get();
                     }
 
-                    // from https://www.oreilly.com/library/view/regular-expressions-cookbook/9780596802837/ch07s16.html
+                    // https://www.oreilly.com/library/view/regular-expressions-cookbook/9780596802837/ch07s16.html
                     if (input.matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$")) {
                         this.properties.put("server-ip", input);
                         break;
