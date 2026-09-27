@@ -7,6 +7,8 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
+import java.nio.file.Path;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 public record EventBackedDataProviderContext(GatherDataEvent event,
@@ -24,6 +26,11 @@ public record EventBackedDataProviderContext(GatherDataEvent event,
     @Override
     public PackOutput getPackOutput() {
         return this.packOutput;
+    }
+
+    @Override
+    public Collection<Path> getInputs() {
+        return this.event.getInputs();
     }
 
     @Override
