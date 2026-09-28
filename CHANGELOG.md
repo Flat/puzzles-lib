@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v26.3.7-mc26.3.x] - 2026-09-28
+
+### Added
+
+- Add `DataProviderContext::getInputs`
+
+### Changed
+
+- Deprecate `DataProviderContext::getWorldRegistries` in favor of the full registry lookup provider
+- Disable the `white-list` in the dedicated server properties used for run configurations
+
+### Fixed
+
+- Fix the custom biome modifier implementation on NeoForge
+
 ## [v26.3.6-mc26.3.x] - 2026-09-26
 
 ### Changed
