@@ -113,6 +113,13 @@ public class FabricClientProxy extends FabricCommonProxy implements ClientProxyI
     }
 
     @Override
+    public void ensureHasSentCarriedItem() {
+        MultiPlayerGameMode gameMode = Minecraft.getInstance().gameMode;
+        Objects.requireNonNull(gameMode, "game mode is null");
+        gameMode.ensureHasSentCarriedItem();
+    }
+
+    @Override
     public ModConstructorImpl<ClientModConstructor> getClientModConstructorImpl() {
         return new FabricClientModConstructor();
     }

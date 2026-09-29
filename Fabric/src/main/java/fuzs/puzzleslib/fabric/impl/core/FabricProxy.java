@@ -28,4 +28,8 @@ public interface FabricProxy extends ProxyImpl {
     default void startClientPrediction(Level level, IntFunction<Packet<ServerGamePacketListener>> predictiveAction) {
         throw new RuntimeException("Start client prediction accessed for wrong side!");
     }
+
+    default void ensureHasSentCarriedItem() {
+        throw new RuntimeException("Ensure has sent carried item accessed for wrong side!");
+    }
 }

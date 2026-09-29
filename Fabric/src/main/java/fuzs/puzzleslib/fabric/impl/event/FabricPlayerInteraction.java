@@ -4,7 +4,6 @@ import fuzs.puzzleslib.common.api.event.v1.core.EventResultHolder;
 import fuzs.puzzleslib.common.api.network.v4.MessageSender;
 import fuzs.puzzleslib.fabric.impl.core.FabricProxy;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.world.InteractionHand;
@@ -44,14 +43,6 @@ public interface FabricPlayerInteraction {
 
         @Override
         public void sendServerboundPacket(Player player, Level level, InteractionHand interactionHand, @Nullable Entity entity, @Nullable HitResult hitResult) {
-            // send the move packet like vanilla to ensure the position+view vectors are accurate
-            MessageSender.broadcast(new ServerboundMovePlayerPacket.PosRot(player.getX(),
-                    player.getY(),
-                    player.getZ(),
-                    player.getYRot(),
-                    player.getXRot(),
-                    player.onGround(),
-                    player.horizontalCollision));
             // send the interaction packet to the server with a new sequentially assigned id
             FabricProxy.get()
                     .startClientPrediction(level,
@@ -83,6 +74,9 @@ public interface FabricPlayerInteraction {
         if (optional.isPresent()) {
             InteractionResult interactionResult = optional.get();
             if (level.isClientSide() && this.sendServerboundPacket(interactionResult)) {
+                // vanilla always ensures the carried item has been sent before notifying the server of an interaction,
+                // but Fabric API injects before that point, so replicate it here for parity with NeoForge
+                FabricProxy.get().ensureHasSentCarriedItem();
                 // this brings parity with Forge where the server is notified regardless of the returned InteractionResult,
                 // as the Forge event runs after the server packet is sent
                 this.sendServerboundPacket(player, level, interactionHand, entity, hitResult);
