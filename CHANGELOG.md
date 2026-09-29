@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v26.3.8-mc26.3.x] - 2026-09-29
+
+### Added
+
+- Add `RenderPipelinesContext::registerOptionalPipeline` and `RenderPipelinesContext::registerOitPipelineSet`
+
+### Fixed
+
+- Fix an extra movement packet being sent when a mod intercepts item use with a non-`SUCCESS` result, causing
+  `Invalid move player packet received` while moving on Fabric
+- Ensure the carried item is sent before the item use packet when a mod intercepts item use for parity with NeoForge on
+  Fabric
+
 ## [v26.3.7-mc26.3.x] - 2026-09-28
 
 ### Added
