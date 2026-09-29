@@ -47,7 +47,7 @@ public abstract class ForgeCapabilityKey<T, C extends CapabilityComponent<T>> im
                     this.fallback = this.capabilityFactory.get();
                 }
                 // just initialize this with the requested holder, so that it is properly valid
-                this.fallback.initialize((CapabilityKey<T, CapabilityComponent<T>>) this, holder, true);
+                this.fallback.initialize((CapabilityKey<T, CapabilityComponent<T>>) this, holder);
                 return this.fallback;
             });
             Objects.requireNonNull(capabilityComponent, "data is null");

@@ -32,17 +32,14 @@ public abstract class CapabilityComponent<T> implements NbtSerializable {
 
     @ApiStatus.Internal
     public final void initialize(CapabilityKey<T, CapabilityComponent<T>> capabilityKey, T holder) {
-        this.initialize(capabilityKey, holder, false);
-    }
-
-    @ApiStatus.Internal
-    public final void initialize(CapabilityKey<T, CapabilityComponent<T>> capabilityKey, T holder, boolean forceOverride) {
-        if (forceOverride || !this.initialized) {
+        Objects.requireNonNull(capabilityKey, "capability key is null");
+        Objects.requireNonNull(holder, "capability holder is null");
+        this.capabilityKey = capabilityKey;
+        // Fabric transfers component instances to a new holder on dimension change / respawn.
+        // This means the holder must be re-bound whenever the component is retrieved.
+        this.holder = holder;
+        if (!this.initialized) {
             this.initialized = true;
-            Objects.requireNonNull(capabilityKey, "capability key is null");
-            this.capabilityKey = capabilityKey;
-            Objects.requireNonNull(holder, "capability holder is null");
-            this.holder = holder;
             this.initialize();
         }
     }
