@@ -325,6 +325,7 @@ accessible	field	net/minecraft/client/model/geom/ModelLayers	ALL_MODELS	Ljava/ut
 accessible	field	net/minecraft/client/multiplayer/ClientCommonPacketListenerImpl	minecraft	Lnet/minecraft/client/Minecraft;
 accessible	field	net/minecraft/client/multiplayer/ClientLevel	minecraft	Lnet/minecraft/client/Minecraft;
 accessible	method	net/minecraft/client/multiplayer/ClientLevel	calculateParticleLevel	(Z)Lnet/minecraft/server/level/ParticleStatus;
+accessible  method  net/minecraft/client/multiplayer/MultiPlayerGameMode    ensureHasSentCarriedItem    ()V
 accessible	method	net/minecraft/client/multiplayer/MultiPlayerGameMode	sameDestroyTarget	(Lnet/minecraft/core/BlockPos;)Z
 accessible	method	net/minecraft/client/multiplayer/MultiPlayerGameMode	startPrediction	(Lnet/minecraft/client/multiplayer/ClientLevel;Lnet/minecraft/client/multiplayer/prediction/PredictiveAction;)V
 accessible	method	net/minecraft/client/multiplayer/SessionSearchTrees	getTooltipLines	(Ljava/util/stream/Stream;Lnet/minecraft/world/item/Item$TooltipContext;Lnet/minecraft/world/item/TooltipFlag;)Ljava/util/stream/Stream;
