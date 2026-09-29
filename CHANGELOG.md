@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add `BlockSetFamily#VARIANT_WOODEN_COOKING_TIME` and `BlockSetFamily::registerFor` for `ItemComponentsContext` to
+  register cooking fuel values for wooden block set families
 - Add `RenderPipelinesContext::registerOptionalPipeline` and `RenderPipelinesContext::registerOitPipelineSet`
 
 ### Fixed
