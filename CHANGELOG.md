@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v26.3.9-mc26.3.x] - 2026-09-30
+
+### Changed
+
+- Generate registry objects for built-in packs via `GatherDataEvent#getPackGenerator` on NeoForge
+
+### Fixed
+
+- Fix NeoForge config types for the renamed local and synced config types
+
 ## [v26.3.8-mc26.3.x] - 2026-09-29
 
 ### Added
