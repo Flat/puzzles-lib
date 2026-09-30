@@ -23,17 +23,17 @@ public class NeoForgeConfigHolderImpl extends ConfigHolderImpl {
 
     @Override
     protected <T extends ConfigCore> ConfigDataHolderImpl<T> client(Supplier<T> supplier) {
-        return new NeoForgeConfigDataHolderImpl<>(ModConfig.Type.STARTUP, ModConfig.Type.CLIENT, supplier);
+        return new NeoForgeConfigDataHolderImpl<>(ModConfig.Type.STARTUP, "client", supplier);
     }
 
     @Override
     protected <T extends ConfigCore> ConfigDataHolderImpl<T> common(Supplier<T> supplier) {
-        return new NeoForgeConfigDataHolderImpl<>(ModConfig.Type.STARTUP, ModConfig.Type.COMMON, supplier);
+        return new NeoForgeConfigDataHolderImpl<>(ModConfig.Type.STARTUP, "common", supplier);
     }
 
     @Override
     protected <T extends ConfigCore> ConfigDataHolderImpl<T> server(Supplier<T> supplier) {
-        return new NeoForgeConfigDataHolderImpl<>(ModConfig.Type.SERVER, supplier);
+        return new NeoForgeConfigDataHolderImpl<>(ModConfig.Type.SYNCED, "server", supplier);
     }
 
     @Override
@@ -62,13 +62,9 @@ public class NeoForgeConfigHolderImpl extends ConfigHolderImpl {
     private static class NeoForgeConfigDataHolderImpl<T extends ConfigCore> extends ConfigDataHolderImpl<T> {
         private final ModConfig.Type configType;
 
-        NeoForgeConfigDataHolderImpl(ModConfig.Type configType, Supplier<T> supplier) {
-            this(configType, configType, supplier);
-        }
-
-        NeoForgeConfigDataHolderImpl(ModConfig.Type configType, ModConfig.Type configNameType, Supplier<T> supplier) {
+        NeoForgeConfigDataHolderImpl(ModConfig.Type configType, String nameExtension, Supplier<T> supplier) {
             super(supplier);
-            this.setFileNameFactory(ConfigHolder.getDefaultNameFactory(configNameType.extension()));
+            this.setFileNameFactory(ConfigHolder.getDefaultNameFactory(nameExtension));
             this.configType = configType;
         }
 

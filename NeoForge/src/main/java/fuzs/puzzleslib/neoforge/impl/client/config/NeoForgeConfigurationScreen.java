@@ -35,9 +35,9 @@ public class NeoForgeConfigurationScreen extends OptionsSubScreen {
      * Show server configs last; all else are global configs that are merged under the same section header.
      */
     private static final List<ModConfig.Type> CONFIG_TYPE_DISPLAY_ORDER = List.of(ModConfig.Type.STARTUP,
-            ModConfig.Type.COMMON,
+            ModConfig.Type.LOCAL,
             ModConfig.Type.CLIENT,
-            ModConfig.Type.SERVER);
+            ModConfig.Type.SYNCED);
     private static final Component EDIT_COMPONENT = Component.literal("Edit").append(CommonComponents.ELLIPSIS);
     /**
      * @see ConfigurationScreen#LANG_PREFIX
@@ -69,7 +69,7 @@ public class NeoForgeConfigurationScreen extends OptionsSubScreen {
         List<Optional<ModConfig>> modConfigs = new ArrayList<>();
         for (ModConfig.Type type : CONFIG_TYPE_DISPLAY_ORDER) {
             // We combine all global config types under the same header, while only server configs get their own.
-            if (type == ModConfig.Type.SERVER) {
+            if (type == ModConfig.Type.SYNCED) {
                 hasSectionHeader = false;
             }
 
@@ -128,10 +128,10 @@ public class NeoForgeConfigurationScreen extends OptionsSubScreen {
     protected Component getTooltipComponent(ModConfig.Type type, ModConfig modConfig) {
         if (!((ModConfigSpec) modConfig.getSpec()).isLoaded()) {
             return ConfigurationScreen.TOOLTIP_CANNOT_EDIT_NOT_LOADED;
-        } else if (type == ModConfig.Type.SERVER && this.minecraft.getCurrentServer() != null && (
+        } else if (type == ModConfig.Type.SYNCED && this.minecraft.getCurrentServer() != null && (
                 !this.minecraft.hasSingleplayerServer() || !this.minecraft.getSingleplayerServer().isPublished())) {
             return ConfigurationScreen.TOOLTIP_CANNOT_EDIT_THIS_WHILE_ONLINE;
-        } else if (type == ModConfig.Type.SERVER && this.minecraft.hasSingleplayerServer()
+        } else if (type == ModConfig.Type.SYNCED && this.minecraft.hasSingleplayerServer()
                 && this.minecraft.getSingleplayerServer().isPublished()) {
             return ConfigurationScreen.TOOLTIP_CANNOT_EDIT_THIS_WHILE_OPEN_TO_LAN;
         } else {
@@ -157,7 +157,7 @@ public class NeoForgeConfigurationScreen extends OptionsSubScreen {
      */
     private static Component getConfigSectionComponent(ModConfig.Type type) {
         String message;
-        if (type != ModConfig.Type.SERVER) {
+        if (type != ModConfig.Type.SYNCED) {
             message = "Global Configurations";
         } else {
             message = "World Configurations";
