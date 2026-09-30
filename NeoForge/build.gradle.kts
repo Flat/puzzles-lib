@@ -16,7 +16,6 @@ multiloader {
         mixin("MenuProviderWithDataNeoForgeMixin")
         accessor(
             "EntityNeoForgeAccessor",
-            "GatherDataEventNeoForgeAccessor",
             "PackNeoForgeAccessor"
         )
         clientAccessor("RegisterKeyMappingsEventNeoForgeAccessor")

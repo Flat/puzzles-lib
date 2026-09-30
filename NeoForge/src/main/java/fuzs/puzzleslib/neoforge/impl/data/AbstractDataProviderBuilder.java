@@ -8,10 +8,8 @@ import fuzs.puzzleslib.common.api.resources.v2.PackResourcesHelper;
 import fuzs.puzzleslib.common.impl.data.DataGenerationScopes;
 import fuzs.puzzleslib.neoforge.api.core.v1.NeoForgeModContainerHelper;
 import fuzs.puzzleslib.neoforge.api.data.v3.core.DataProviderBuilder;
-import fuzs.puzzleslib.neoforge.mixin.accessor.GatherDataEventNeoForgeAccessor;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -32,15 +30,14 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.util.context.ContextKeySet;
 import net.minecraft.world.item.crafting.Recipe;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.neoforged.neoforge.data.event.PackGenerator;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 /**
@@ -265,6 +262,34 @@ public abstract class AbstractDataProviderBuilder implements DataProviderBuilder
     protected abstract RootDataProviderFactory createRootDataProviderFactory(GatherDataEvent event);
 
     /**
+     * Creates the pack generator used for generating the registry set builders.
+     *
+     * @param event the event
+     * @return the pack generator targeting the registry output
+     */
+    protected abstract PackGenerator createRegistryPackGenerator(GatherDataEvent event);
+
+    /**
+     * The provider name used for generating world registry objects. This must be unique per event, since
+     * {@link PackGenerator} registers providers by their bare name.
+     *
+     * @return the world registry provider name
+     */
+    protected String getWorldRegistryProviderName() {
+        return "world";
+    }
+
+    /**
+     * The provider name used for generating reloadable registry objects. This must be unique per event, since
+     * {@link PackGenerator} registers providers by their bare name.
+     *
+     * @return the reloadable registry provider name
+     */
+    protected String getReloadableRegistryProviderName() {
+        return "reloadable";
+    }
+
+    /**
      * Registers the {@link GatherDataEvent} listener reading this builder's current state when the event fires.
      */
     private void registerEventListener() {
@@ -281,6 +306,7 @@ public abstract class AbstractDataProviderBuilder implements DataProviderBuilder
 
     private void addDataProviders(GatherDataEvent event) {
         RootDataProviderFactory factory = this.createRootDataProviderFactory(event);
+        PackGenerator registryPackGenerator = this.createRegistryPackGenerator(event);
 
         // Accumulated loot table sub-providers are materialized into a single loot table provider right before the
         // reloadable layer is built, so they share one random sequence collision map.
@@ -293,30 +319,16 @@ public abstract class AbstractDataProviderBuilder implements DataProviderBuilder
 
         if (!this.worldRegistrySetBuilder.getEntryKeys().isEmpty()) {
             // Make sure this generates for all namespaces (namely vanilla) by passing a null set.
-            // Also, run this manually so it is added to the correct generator.
-            CompletableFuture<HolderLookup.Provider> worldRegistries = factory.apply((PackOutput packOutput) -> {
-                return DatapackBuiltinEntriesProvider.forWorldLayer(packOutput,
-                        "world",
-                        event.getWorldLookupProvider(),
-                        this.worldRegistrySetBuilder,
-                        (Set<String>) null);
-            }).getRegistryProvider();
-            ((GatherDataEventNeoForgeAccessor) event).puzzleslib$setWorldRegistriesWithModdedEntries(worldRegistries);
+            registryPackGenerator.createWorldRegistryObjects(this.worldRegistrySetBuilder,
+                    null,
+                    this.getWorldRegistryProviderName());
         }
 
         if (!this.reloadableRegistrySetBuilder.getEntryKeys().isEmpty()) {
             // Make sure this generates for all namespaces (namely vanilla) by passing a null set.
-            // Also, run this manually so it is added to the correct generator.
-            CompletableFuture<HolderLookup.Provider> reloadableRegistries = factory.apply((PackOutput packOutput) -> {
-                return DatapackBuiltinEntriesProvider.forReloadableLayer(packOutput,
-                        "reloadable",
-                        event.getWorldLookupProvider(),
-                        event.getReloadableLookupProvider(),
-                        this.reloadableRegistrySetBuilder,
-                        (Set<String>) null);
-            }).getRegistryProvider();
-            ((GatherDataEventNeoForgeAccessor) event).puzzleslib$setReloadableRegistriesWithModdedEntries(
-                    reloadableRegistries);
+            registryPackGenerator.createReloadableRegistryObjects(this.reloadableRegistrySetBuilder,
+                    null,
+                    this.getReloadableRegistryProviderName());
         }
 
         for (DataProviderContext.Factory dataProvider : this.dataProviders) {
@@ -352,6 +364,11 @@ public abstract class AbstractDataProviderBuilder implements DataProviderBuilder
                 }
             };
         }
+
+        @Override
+        protected PackGenerator createRegistryPackGenerator(GatherDataEvent event) {
+            return event.getDefaultPackGenerator();
+        }
     }
 
     private static final class BuiltInDataProviderBuilder extends AbstractDataProviderBuilder {
@@ -366,13 +383,34 @@ public abstract class AbstractDataProviderBuilder implements DataProviderBuilder
 
         @Override
         protected RootDataProviderFactory createRootDataProviderFactory(GatherDataEvent event) {
-            Path outputFolder = Path.of(this.packType.getDirectory(),
+            DataGenerator.PackGenerator packGenerator = event.getGenerator()
+                    .getPackGenerator(true, this.packId.toString(), this.getOutputFolder().toString());
+            return packGenerator::addProvider;
+        }
+
+        @Override
+        protected PackGenerator createRegistryPackGenerator(GatherDataEvent event) {
+            PackOutput packOutput = event.getGenerator().getPackOutput(this.getOutputFolder().toString());
+            return event.getPackGenerator(packOutput);
+        }
+
+        private Path getOutputFolder() {
+            return Path.of(this.packType.getDirectory(),
                     this.packId.getNamespace(),
                     PackResourcesHelper.getBuiltInDomain(this.packType),
                     this.packId.getPath());
-            DataGenerator.PackGenerator packGenerator = event.getGenerator()
-                    .getPackGenerator(true, this.packId.toString(), outputFolder.toString());
-            return packGenerator::addProvider;
+        }
+
+        @Override
+        protected String getWorldRegistryProviderName() {
+            // The pack id makes the provider name unique, as PackGenerator registers providers by their bare name.
+            return this.packId + "/" + super.getWorldRegistryProviderName();
+        }
+
+        @Override
+        protected String getReloadableRegistryProviderName() {
+            // The pack id makes the provider name unique, as PackGenerator registers providers by their bare name.
+            return this.packId + "/" + super.getReloadableRegistryProviderName();
         }
     }
 }
