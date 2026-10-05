@@ -15,6 +15,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Objects;
+
 @Mixin(AnvilMenu.class)
 abstract class AnvilMenuFabricMixin extends ItemCombinerMenu {
     @Shadow
@@ -33,9 +35,10 @@ abstract class AnvilMenuFabricMixin extends ItemCombinerMenu {
     public void createResult(CallbackInfo callback) {
         ItemStack primaryItemStack = this.inputSlots.getItem(0);
         ItemStack secondaryItemStack = this.inputSlots.getItem(1);
-        MutableValue<ItemStack> outputItemStack = MutableValue.fromEvent((ItemStack itemStack) -> this.resultSlots.setItem(
-                0,
-                itemStack), () -> this.resultSlots.getItem(0));
+        MutableValue<ItemStack> outputItemStack = MutableValue.fromEvent((ItemStack output) -> {
+            Objects.requireNonNull(output, "output is null");
+            this.resultSlots.setItem(0, output);
+        }, () -> this.resultSlots.getItem(0));
         MutableInt enchantmentLevelCost = MutableInt.fromEvent(this.cost::set, this.cost::get);
         MutableInt repairMaterialCost = MutableInt.fromEvent((int i) -> this.repairItemCountCost = i,
                 () -> this.repairItemCountCost);

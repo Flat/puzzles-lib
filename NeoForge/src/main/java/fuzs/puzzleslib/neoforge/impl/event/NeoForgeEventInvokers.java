@@ -361,8 +361,10 @@ public final class NeoForgeEventInvokers {
         INSTANCE.register(CreateAnvilResultCallback.class,
                 AnvilUpdateEvent.class,
                 (CreateAnvilResultCallback callback, AnvilUpdateEvent event) -> {
-                    MutableValue<ItemStack> outputItemStack = MutableValue.fromEvent(event::setOutput,
-                            event::getOutput);
+                    MutableValue<ItemStack> outputItemStack = MutableValue.fromEvent((ItemStack output) -> {
+                        Objects.requireNonNull(output, "output is null");
+                        event.setOutput(output);
+                    }, event::getOutput);
                     MutableInt enchantmentLevelCost = MutableInt.fromEvent(event::setXpCost, event::getXpCost);
                     MutableInt repairMaterialCost = MutableInt.fromEvent(event::setMaterialCost,
                             event::getMaterialCost);
@@ -384,7 +386,10 @@ public final class NeoForgeEventInvokers {
                     if (entry != null) {
                         Supplier<ItemStack> outputItemStackSupplier = Suppliers.memoize(() -> entry.getKey()
                                 .computeResult(event.getTopItem(), event.getBottomItem()));
-                        MutableValue<ItemStack> outputItemStack = MutableValue.fromEvent(event::setOutput, () -> {
+                        MutableValue<ItemStack> outputItemStack = MutableValue.fromEvent((ItemStack output) -> {
+                            Objects.requireNonNull(output, "output is null");
+                            event.setOutput(output);
+                        }, () -> {
                             return !event.getOutput().isEmpty() ? event.getOutput() : outputItemStackSupplier.get();
                         });
                         MutableInt experiencePointReward = MutableInt.fromEvent(event::setXp, event::getXp);

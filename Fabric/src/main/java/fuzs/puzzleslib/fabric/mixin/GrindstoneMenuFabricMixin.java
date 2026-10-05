@@ -23,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Objects;
 import java.util.OptionalInt;
 
 @Mixin(GrindstoneMenu.class)
@@ -65,7 +66,7 @@ abstract class GrindstoneMenuFabricMixin extends AbstractContainerMenu implement
                 this.puzzleslib$experiencePointReward = OptionalInt.empty();
                 return ItemStack.EMPTY;
             } else {
-                return outputItemStack.get();
+                return Objects.requireNonNull(outputItemStack.get(), "output is null");
             }
         } else {
             return itemStack;

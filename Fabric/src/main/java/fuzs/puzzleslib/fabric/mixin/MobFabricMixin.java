@@ -1,5 +1,6 @@
 package fuzs.puzzleslib.fabric.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Cancellable;
 import fuzs.puzzleslib.common.api.event.v1.core.EventResult;
 import fuzs.puzzleslib.common.api.event.v1.data.MutableValue;
@@ -13,7 +14,6 @@ import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Mob.class)
@@ -23,7 +23,9 @@ abstract class MobFabricMixin extends LivingEntity {
         super(entityType, level);
     }
 
-    @ModifyVariable(method = "setTarget", at = @At("HEAD"), argsOnly = true)
+    @ModifyExpressionValue(method = "setTarget",
+                           at = @At(value = "INVOKE",
+                                    target = "Lnet/minecraft/world/entity/Mob;asValidTarget(Lnet/minecraft/world/entity/LivingEntity;)Lnet/minecraft/world/entity/LivingEntity;"))
     public @Nullable LivingEntity setTarget(@Nullable LivingEntity target, @Cancellable CallbackInfo callback) {
         MutableValue<@Nullable LivingEntity> targetValue = MutableValue.fromValue(target);
         EventResult result = FabricLivingEvents.LIVING_CHANGE_TARGET.invoker().onLivingChangeTarget(this, targetValue);
