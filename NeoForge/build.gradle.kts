@@ -13,11 +13,8 @@ neoForge {
 multiloader {
     mixins {
         plugin.set("${project.group}.${project.packageName}.mixin.MixinConfigPluginNeoForgeImpl")
-        mixin("MenuProviderWithDataNeoForgeMixin")
-        accessor(
-            "EntityNeoForgeAccessor",
-            "PackNeoForgeAccessor"
-        )
+        mixin("MenuProviderWithDataNeoForgeMixin", "ResourceManagerRegistryLoadTaskNeoForgeMixin")
+        accessor("EntityNeoForgeAccessor", "PackNeoForgeAccessor")
         clientAccessor("RegisterKeyMappingsEventNeoForgeAccessor")
     }
 }

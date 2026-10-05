@@ -14,6 +14,7 @@ import fuzs.puzzleslib.common.impl.PuzzlesLib;
 import fuzs.puzzleslib.common.impl.event.EventImplHelper;
 import fuzs.puzzleslib.common.impl.event.PotentialSpawnsList;
 import fuzs.puzzleslib.neoforge.api.core.v1.NeoForgeModContainerHelper;
+import fuzs.puzzleslib.neoforge.api.event.v1.ModifyEnchantmentsEvent;
 import fuzs.puzzleslib.neoforge.mixin.accessor.EntityNeoForgeAccessor;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -339,6 +340,11 @@ public final class NeoForgeEventInvokers {
                             new LootTableBackedBuilder(event.getTable()),
                             event.getRegistries());
                 });
+        INSTANCE.register(ModifyEnchantmentsCallback.class,
+                ModifyEnchantmentsEvent.class,
+                (ModifyEnchantmentsCallback callback, ModifyEnchantmentsEvent event) -> {
+                    callback.onModifyEnchantment(event.getResourceKey(), event.getBuilder(), event.getLookupProvider());
+                });
         INSTANCE.register(ItemEntityEvents.Touch.class,
                 ItemEntityPickupEvent.Pre.class,
                 (ItemEntityEvents.Touch callback, ItemEntityPickupEvent.Pre event) -> {
@@ -373,7 +379,7 @@ public final class NeoForgeEventInvokers {
         INSTANCE.register(CreateGrindstoneResultCallback.class,
                 GrindstoneEvent.OnPlaceItem.class,
                 (CreateGrindstoneResultCallback callback, GrindstoneEvent.OnPlaceItem event) -> {
-                    Map.Entry<GrindstoneMenu, Player> entry = EventImplHelper.getGrindstoneMenuFromInputs(event.getTopItem(),
+                    Map.Entry<GrindstoneMenu, Player> entry = NeoForgeEventImplHelper.getGrindstoneMenuFromInputs(event.getTopItem(),
                             event.getBottomItem());
                     if (entry != null) {
                         Supplier<ItemStack> outputItemStackSupplier = Suppliers.memoize(() -> entry.getKey()

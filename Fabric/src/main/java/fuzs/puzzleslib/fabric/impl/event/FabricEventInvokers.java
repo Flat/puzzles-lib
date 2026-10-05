@@ -25,6 +25,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.player.*;
 import net.fabricmc.fabric.api.gamerule.v1.GameRuleEvents;
+import net.fabricmc.fabric.api.item.v1.EnchantmentEvents;
+import net.fabricmc.fabric.api.item.v1.ResourceSource;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.fabricmc.fabric.api.loot.v3.LootTableSource;
 import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents;
@@ -32,6 +34,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerConfigurationConnectionEvents
 import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ReloadableServerResources;
@@ -47,6 +50,7 @@ import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -261,6 +265,13 @@ public final class FabricEventInvokers {
                 callback.onLootTableLoad(key.identifier(), tableBuilder, registries);
             };
         });
+        INSTANCE.register(ModifyEnchantmentsCallback.class,
+                EnchantmentEvents.MODIFY_WITH_LOOKUP,
+                (ModifyEnchantmentsCallback callback) -> {
+                    return (ResourceKey<Enchantment> key, Enchantment.Builder builder, ResourceSource source, RegistryOps.RegistryInfoLookup registries) -> {
+                        callback.onModifyEnchantment(key, builder, registries::lookup);
+                    };
+                });
         INSTANCE.register(ItemEntityEvents.Touch.class, FabricPlayerEvents.ITEM_TOUCH);
         INSTANCE.register(ItemEntityEvents.Pickup.class, FabricPlayerEvents.ITEM_PICKUP);
         INSTANCE.register(CreateAnvilResultCallback.class, FabricPlayerEvents.CREATE_ANVIL_RESULT);

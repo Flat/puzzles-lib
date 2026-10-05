@@ -47,7 +47,6 @@ abstract class ServerLevelFabricMixin extends Level {
     @WrapWithCondition(method = "tickNonPassenger",
                        at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;tick()V"))
     public boolean tickNonPassenger(Entity entity, @Share("isEntityTickCancelled") LocalBooleanRef isEntityTickCancelled) {
-        // avoid using @WrapOperation, so we are not blamed for any overhead from running the entity tick
         EventResult eventResult = FabricEntityEvents.ENTITY_TICK_START.invoker().onStartEntityTick(entity);
         isEntityTickCancelled.set(eventResult.isInterrupt());
         return eventResult.isPass();
