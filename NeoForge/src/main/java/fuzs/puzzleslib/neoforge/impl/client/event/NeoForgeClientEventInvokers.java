@@ -16,7 +16,6 @@ import fuzs.puzzleslib.common.api.event.v1.data.MutableBoolean;
 import fuzs.puzzleslib.common.api.event.v1.data.MutableFloat;
 import fuzs.puzzleslib.common.api.event.v1.data.MutableInt;
 import fuzs.puzzleslib.common.api.event.v1.data.MutableValue;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedFloat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -58,8 +57,6 @@ import org.jspecify.annotations.Nullable;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static fuzs.puzzleslib.neoforge.api.event.v1.core.NeoForgeEventInvokerRegistry.INSTANCE;
 
@@ -220,18 +217,19 @@ public final class NeoForgeClientEventInvokers {
         INSTANCE.register(ComputeFovModifierCallback.class,
                 ComputeFovModifierEvent.class,
                 (ComputeFovModifierCallback callback, ComputeFovModifierEvent event) -> {
-                    float fovEffectScale = Minecraft.getInstance().options.fovEffectScale().get().floatValue();
-                    if (fovEffectScale == 0.0F) {
+                    // Do not fire the event when FOV effects don't apply due to the option being set to zero.
+                    if (event.getFovScale() == 0.0F) {
                         return;
                     }
 
                     // Here we reverse fovEffectScale calculations applied by vanilla in the return statement / by NeoForge when setting up the event.
                     // This approach is chosen so the callback may work with the actual fov modifier.
-                    // We bypass having to deal with the fovEffectScale option (which is applied automatically regardless).
-                    Consumer<Float> consumer = value -> event.setNewFovModifier(Mth.lerp(fovEffectScale, 1.0F, value));
-                    Supplier<Float> supplier = () -> (event.getNewFovModifier() - 1.0F) / fovEffectScale + 1.0F;
-                    callback.onComputeFovModifier(event.getPlayer(),
-                            DefaultedFloat.fromEvent(consumer, supplier, event::getFovModifier));
+                    MutableFloat fieldOfViewModifier = MutableFloat.fromEvent((Float modifier) -> {
+                        event.setNewFovModifier(Mth.lerp(event.getFovScale(), 1.0F, modifier));
+                    }, () -> {
+                        return (event.getNewFovModifier() - 1.0F) / event.getFovScale() + 1.0F;
+                    });
+                    callback.onComputeFovModifier(event.getPlayer(), fieldOfViewModifier);
                 });
         registerScreenEvent(ScreenEvents.BeforeInit.class, ScreenEvent.Init.Pre.class, (callback, event) -> {
             Window window = event.getScreen().getMinecraft().getWindow();
