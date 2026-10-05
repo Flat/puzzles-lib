@@ -4,6 +4,7 @@ import fuzs.puzzleslib.common.api.event.v1.entity.living.*;
 import fuzs.puzzleslib.fabric.api.event.v1.core.FabricEventFactory;
 import net.fabricmc.fabric.api.event.Event;
 import net.minecraft.core.Holder;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -114,8 +115,8 @@ public final class FabricLivingEvents {
      */
     public static final Event<LivingJumpCallback> LIVING_JUMP = FabricEventFactory.createResult(LivingJumpCallback.class);
     /**
-     * Called in {@link LivingEntity#getVisibilityPercent(Entity)} when an entity is trying to be targeted by another
-     * entity for applying a given percentage to the looking entity's original visibility range.
+     * Called in {@link LivingEntity#getVisibilityPercent(ServerLevel, Entity)} when an entity is trying to be targeted
+     * by another entity for applying a given percentage to the looking entity's original visibility range.
      */
     public static final Event<CalculateLivingVisibilityCallback> CALCULATE_LIVING_VISIBILITY = FabricEventFactory.create(
             CalculateLivingVisibilityCallback.class);

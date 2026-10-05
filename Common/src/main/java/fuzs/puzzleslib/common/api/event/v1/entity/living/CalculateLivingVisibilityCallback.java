@@ -2,6 +2,7 @@ package fuzs.puzzleslib.common.api.event.v1.entity.living;
 
 import fuzs.puzzleslib.common.api.event.v1.core.EventInvoker;
 import fuzs.puzzleslib.common.api.event.v1.data.MutableDouble;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import org.jspecify.annotations.Nullable;
@@ -11,8 +12,8 @@ public interface CalculateLivingVisibilityCallback {
     EventInvoker<CalculateLivingVisibilityCallback> EVENT = EventInvoker.lookup(CalculateLivingVisibilityCallback.class);
 
     /**
-     * Called in {@link LivingEntity#getVisibilityPercent(Entity)} when an entity is trying to be targeted by another
-     * entity for applying a given percentage to the looking entity's original visibility range.
+     * Called in {@link LivingEntity#getVisibilityPercent(ServerLevel, Entity)} when an entity is trying to be targeted
+     * by another entity for applying a given percentage to the looking entity's original visibility range.
      *
      * @param livingEntity      the entity trying to be targeted
      * @param lookingEntity     the looking entity that is trying to target the other entity
