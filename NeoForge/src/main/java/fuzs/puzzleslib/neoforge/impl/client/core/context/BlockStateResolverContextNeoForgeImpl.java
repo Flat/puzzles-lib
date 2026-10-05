@@ -3,24 +3,18 @@ package fuzs.puzzleslib.neoforge.impl.client.core.context;
 import fuzs.puzzleslib.common.api.client.core.v1.context.BlockStateResolverContext;
 import fuzs.puzzleslib.common.api.client.renderer.v1.model.ModelLoadingHelper;
 import fuzs.puzzleslib.common.impl.PuzzlesLib;
-import fuzs.puzzleslib.common.impl.PuzzlesLibMod;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.renderer.block.LoadedBlockModels;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
-import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.SpriteLoader;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
-import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.client.resources.model.sprite.MaterialBaker;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.Util;
-import net.minecraft.util.profiling.Profiler;
-import net.minecraft.util.profiling.Zone;
 import net.minecraft.util.thread.ParallelMapTransform;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,7 +23,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -40,20 +33,17 @@ import java.util.function.Function;
 
 public final class BlockStateResolverContextNeoForgeImpl implements BlockStateResolverContext {
     private final ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
-    private final Function<Identifier, TextureAtlasSprite> textureResolver;
+    private final MaterialBaker materialBaker;
     private final ResolvedModel missingModel;
-    private final TextureAtlasSprite missingSprite;
     private final Function<Identifier, @Nullable ResolvedModel> modelResolver;
     private final BiConsumer<Identifier, ResolvedModel> modelCache;
     private final BiConsumer<BlockState, BlockStateModel> blockStateModelOutput;
     private final Function<MaterialBaker, ModelBaker> modelBakerFactory = this::createModelBaker;
 
     public BlockStateResolverContextNeoForgeImpl(ModelEvent.ModifyBakingResult event) {
-        this.textureResolver = event.getTextureGetter();
+        this.materialBaker = event.getMaterialBaker();
         ModelBakery bakery = event.getModelBakery();
         this.missingModel = bakery.missingModel;
-        TextureAtlasSprite missingSprite = event.getTextureGetter().apply(MissingTextureAtlasSprite.getLocation());
-        this.missingSprite = Objects.requireNonNull(missingSprite, "missing sprite is null");
         Map<Identifier, ResolvedModel> resolvedModels = new HashMap<>();
         this.modelResolver = (Identifier id) -> {
             // The resolved models map from the bakery is unmodifiable when the ModernFix mod is installed.
@@ -103,8 +93,12 @@ public final class BlockStateResolverContextNeoForgeImpl implements BlockStateRe
         this.loadModels(models).forEach(this.blockStateModelOutput);
     }
 
+    /**
+     * @see ModelManager#loadModels(SpriteLoader.Preparations, SpriteLoader.Preparations, ModelBakery,
+     *         LoadedBlockModels, Object2IntMap, EntityModelSet, Executor)
+     */
     private Map<BlockState, BlockStateModel> loadModels(Map<BlockState, BlockStateModel.UnbakedRoot> models) {
-        return loadModels(models, this.textureResolver, this.modelBakerFactory, this.missingSprite);
+        return bakeModels(models, this.modelBakerFactory.apply(this.materialBaker), Util.backgroundExecutor()).join();
     }
 
     @Override
@@ -113,34 +107,6 @@ public final class BlockStateResolverContextNeoForgeImpl implements BlockStateRe
             blockStateConsumer.accept(resourceLoader.apply(this.resourceManager, Util.backgroundExecutor()).join(),
                     consumer);
         });
-    }
-
-    /**
-     * Similar to
-     * {@link ModelManager#loadModels(SpriteLoader.Preparations, SpriteLoader.Preparations, ModelBakery,
-     * LoadedBlockModels, Object2IntMap, EntityModelSet, Executor)}.
-     */
-    private static Map<BlockState, BlockStateModel> loadModels(Map<BlockState, BlockStateModel.UnbakedRoot> models, Function<Identifier, TextureAtlasSprite> textureGetter, Function<MaterialBaker, ModelBaker> bakerFactory, TextureAtlasSprite missingSprite) {
-        try (Zone _ = Profiler.get().zone(PuzzlesLibMod.id("baking")::toString)) {
-            SpriteLoader.Preparations dummyAtlas = new SpriteLoader.Preparations(0,
-                    0,
-                    0,
-                    missingSprite,
-                    Map.of(),
-                    CompletableFuture.completedFuture(null));
-            MaterialBaker materials = new MaterialBaker(dummyAtlas, dummyAtlas) {
-                @Override
-                public Material.@Nullable Baked bake(Material material) {
-                    TextureAtlasSprite sprite = textureGetter.apply(material.sprite());
-                    return sprite != null ? new Material.Baked(sprite, material.forceTranslucent()) : null;
-                }
-            };
-            return bakeModels(models,
-                    bakerFactory.apply(materials),
-                    Util.backgroundExecutor()).whenComplete((Map<BlockState, BlockStateModel> _, Throwable _) -> {
-                materials.logMissingTextures();
-            }).join();
-        }
     }
 
     /**

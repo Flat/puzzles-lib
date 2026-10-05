@@ -13,7 +13,7 @@ public record NeoForgeAttachmentTypeAdapter<T extends IAttachmentHolder, A>(Defe
 
     @Override
     public Identifier id() {
-        return this.attachmentType.getKey().identifier();
+        return this.attachmentType.key().identifier();
     }
 
     @Override

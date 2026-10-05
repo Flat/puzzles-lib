@@ -60,7 +60,7 @@ public final class BiomeTransformationsContextNeoForgeImpl implements BiomeTrans
                         context.getModId()) {
                     @Override
                     protected void gather() {
-                        this.unconditional(holder.getKey().identifier(), biomeModifier);
+                        this.unconditional(holder.key().identifier(), biomeModifier);
                     }
                 };
             });
