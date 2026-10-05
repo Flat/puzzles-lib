@@ -25,7 +25,7 @@ abstract class MobFabricMixin extends LivingEntity {
 
     @ModifyVariable(method = "setTarget", at = @At("HEAD"), argsOnly = true)
     public @Nullable LivingEntity setTarget(@Nullable LivingEntity target, @Cancellable CallbackInfo callback) {
-        MutableValue<LivingEntity> targetValue = MutableValue.fromValue(target);
+        MutableValue<@Nullable LivingEntity> targetValue = MutableValue.fromValue(target);
         EventResult result = FabricLivingEvents.LIVING_CHANGE_TARGET.invoker().onLivingChangeTarget(this, targetValue);
         if (result.isInterrupt()) {
             callback.cancel();

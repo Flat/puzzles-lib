@@ -25,6 +25,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Objects;
+
 @Mixin(Player.class)
 abstract class PlayerFabricMixin extends LivingEntity {
 
@@ -83,7 +85,7 @@ abstract class PlayerFabricMixin extends LivingEntity {
         if (heldWeapon.getItem() instanceof ProjectileWeaponItem) {
             MutableValue<ItemStack> projectileValue = MutableValue.fromValue(projectile);
             FabricLivingEvents.PICK_PROJECTILE.invoker().onPickProjectile(this, heldWeapon, projectileValue);
-            return projectileValue.get();
+            return Objects.requireNonNull(projectileValue.get(), "projectile is null");
         } else {
             return projectile;
         }

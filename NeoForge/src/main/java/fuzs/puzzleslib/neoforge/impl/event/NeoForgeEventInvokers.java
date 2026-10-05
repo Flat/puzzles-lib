@@ -468,8 +468,10 @@ public final class NeoForgeEventInvokers {
         INSTANCE.register(UseItemEvents.Finish.class,
                 LivingEntityUseItemEvent.Finish.class,
                 (UseItemEvents.Finish callback, LivingEntityUseItemEvent.Finish event) -> {
-                    MutableValue<ItemStack> itemStack = MutableValue.fromEvent(event::setResultStack,
-                            event::getResultStack);
+                    MutableValue<ItemStack> itemStack = MutableValue.fromEvent((ItemStack result) -> {
+                        Objects.requireNonNull(result, "result is null");
+                        event.setResultStack(result);
+                    }, event::getResultStack);
                     callback.onUseItemFinish(event.getEntity(), itemStack, event.getItem(), event.getHand());
                 });
         INSTANCE.register(ShieldBlockCallback.class,
@@ -870,7 +872,7 @@ public final class NeoForgeEventInvokers {
         INSTANCE.register(LivingChangeTargetCallback.class,
                 LivingChangeTargetEvent.class,
                 (LivingChangeTargetCallback callback, LivingChangeTargetEvent event) -> {
-                    MutableValue<LivingEntity> target = MutableValue.fromEvent(event::setNewAboutToBeSetTarget,
+                    MutableValue<@Nullable LivingEntity> target = MutableValue.fromEvent(event::setNewAboutToBeSetTarget,
                             event::getNewAboutToBeSetTarget);
                     if (callback.onLivingChangeTarget(event.getEntity(), target).isInterrupt()) {
                         event.setCanceled(true);
@@ -1007,8 +1009,10 @@ public final class NeoForgeEventInvokers {
         INSTANCE.register(PickProjectileCallback.class,
                 LivingGetProjectileEvent.class,
                 (PickProjectileCallback callback, LivingGetProjectileEvent event) -> {
-                    MutableValue<ItemStack> ammoItemStack = MutableValue.fromEvent(event::setProjectileItemStack,
-                            event::getProjectileItemStack);
+                    MutableValue<ItemStack> ammoItemStack = MutableValue.fromEvent((ItemStack projectile) -> {
+                        Objects.requireNonNull(projectile, "projectile is null");
+                        event.setProjectileItemStack(projectile);
+                    }, event::getProjectileItemStack);
                     callback.onPickProjectile(event.getEntity(), event.getProjectileWeaponItemStack(), ammoItemStack);
                 });
         INSTANCE.register(EnderPearlTeleportCallback.class,

@@ -149,7 +149,7 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
                         resultValue,
                         originalUseItem.get(),
                         this.getUsedItemHand());
-        return resultValue.get();
+        return Objects.requireNonNull(resultValue.get(), "result is null");
     }
 
     @Shadow
@@ -405,7 +405,7 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
             MutableValue<ItemStack> projectileValue = MutableValue.fromValue(projectile);
             FabricLivingEvents.PICK_PROJECTILE.invoker()
                     .onPickProjectile(LivingEntity.class.cast(this), heldWeapon, projectileValue);
-            return projectileValue.get();
+            return Objects.requireNonNull(projectileValue.get(), "projectile is null");
         } else {
             return projectile;
         }

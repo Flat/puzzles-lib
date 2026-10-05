@@ -8,6 +8,7 @@ import fuzs.puzzleslib.fabric.api.event.v1.FabricLivingEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.behavior.StartAttacking;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
@@ -20,7 +21,7 @@ abstract class StartAttackingFabricMixin {
                at = @At(value = "INVOKE",
                         target = "Lnet/minecraft/world/entity/ai/behavior/declarative/MemoryAccessor;set(Ljava/lang/Object;)V"))
     private static Object create(Object target, @Local(argsOnly = true) Mob mob, @Cancellable CallbackInfoReturnable<Boolean> callback) {
-        MutableValue<LivingEntity> targetValue = MutableValue.fromValue((LivingEntity) target);
+        MutableValue<@Nullable LivingEntity> targetValue = MutableValue.fromValue((LivingEntity) target);
         EventResult result = FabricLivingEvents.LIVING_CHANGE_TARGET.invoker().onLivingChangeTarget(mob, targetValue);
         // This is specifically used for setting a new target only, not for clearing an existing one; so we need to handle the null case as well.
         if (result.isInterrupt() || targetValue.get() == null) {

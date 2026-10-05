@@ -12,6 +12,8 @@ import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
+import java.util.Objects;
+
 @Mixin(Monster.class)
 abstract class MonsterFabricMixin extends PathfinderMob {
 
@@ -24,7 +26,7 @@ abstract class MonsterFabricMixin extends PathfinderMob {
         if (heldWeapon.getItem() instanceof ProjectileWeaponItem) {
             MutableValue<ItemStack> projectileValue = MutableValue.fromValue(projectile);
             FabricLivingEvents.PICK_PROJECTILE.invoker().onPickProjectile(this, heldWeapon, projectileValue);
-            return projectileValue.get();
+            return Objects.requireNonNull(projectileValue.get(), "projectile is null");
         } else {
             return projectile;
         }

@@ -12,9 +12,9 @@ public interface PickProjectileCallback {
     /**
      * Fired when an entity attempts to find a valid projectile via {@link LivingEntity#getProjectile(ItemStack)}.
      *
-     * @param livingEntity        the living entity
-     * @param weaponItemStack     the ranged weapon item stack
-     * @param projectileItemStack the ammo item stack, possibly empty
+     * @param livingEntity the living entity
+     * @param weapon       the ranged weapon item stack
+     * @param projectile   the ammo item stack, possibly empty
      */
-    void onPickProjectile(LivingEntity livingEntity, ItemStack weaponItemStack, MutableValue<ItemStack> projectileItemStack);
+    void onPickProjectile(LivingEntity livingEntity, ItemStack weapon, MutableValue<ItemStack> projectile);
 }
