@@ -14,6 +14,7 @@ import fuzs.puzzleslib.common.api.event.v1.data.MutableDouble;
 import fuzs.puzzleslib.common.api.event.v1.data.MutableFloat;
 import fuzs.puzzleslib.common.impl.PuzzlesLib;
 import fuzs.puzzleslib.common.impl.event.EventImplHelper;
+import fuzs.puzzleslib.common.impl.event.data.DefaultedDouble;
 import fuzs.puzzleslib.common.impl.event.data.DefaultedFloat;
 import fuzs.puzzleslib.common.impl.event.data.DefaultedInt;
 import fuzs.puzzleslib.common.impl.event.data.DefaultedValue;
@@ -43,6 +44,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -386,6 +388,16 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
     @Inject(method = "jumpFromGround", at = @At("TAIL"))
     protected void jumpFromGround(CallbackInfo callback) {
         EventImplHelper.onLivingJump(FabricLivingEvents.LIVING_JUMP.invoker(), LivingEntity.class.cast(this));
+    }
+
+    @ModifyArg(method = "getVisibilityPercent",
+               at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Mth;clamp(DDD)D"),
+               index = 0)
+    public double getVisibilityPercent(double visibilityPercent, @Local(argsOnly = true) @Nullable Entity targetingEntity) {
+        DefaultedDouble visibilityPercentValue = DefaultedDouble.fromValue(visibilityPercent);
+        FabricLivingEvents.CALCULATE_LIVING_VISIBILITY.invoker()
+                .onCalculateLivingVisibility(LivingEntity.class.cast(this), targetingEntity, visibilityPercentValue);
+        return visibilityPercentValue.getAsOptionalDouble().orElse(visibilityPercent);
     }
 
     @ModifyReturnValue(method = "getProjectile", at = @At("RETURN"))
