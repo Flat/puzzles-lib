@@ -1,11 +1,12 @@
 package fuzs.puzzleslib.fabric.impl.event;
 
 import com.google.common.base.Preconditions;
+import com.mojang.datafixers.util.Either;
+import com.mojang.datafixers.util.Unit;
 import fuzs.puzzleslib.common.api.event.v1.core.EventResult;
 import fuzs.puzzleslib.common.api.event.v1.data.MutableFloat;
 import fuzs.puzzleslib.common.api.event.v1.data.MutableValue;
 import fuzs.puzzleslib.fabric.api.event.v1.FabricLivingEvents;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedFloat;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -15,7 +16,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 import java.util.Collection;
@@ -38,17 +38,18 @@ public final class FabricEventImplHelper {
         }
     }
 
-    public static float onLivingHurt(LivingEntity livingEntity, ServerLevel serverLevel, DamageSource damageSource, float damageAmount, MutableBoolean preventHurting) {
+    public static Either<Unit, Float> onLivingHurt(LivingEntity livingEntity, ServerLevel serverLevel, DamageSource damageSource, float damageAmount) {
         if (!livingEntity.isInvulnerableTo(serverLevel, damageSource)) {
-            DefaultedFloat damageAmountValue = DefaultedFloat.fromValue(damageAmount);
+            MutableFloat damageAmountValue = MutableFloat.fromValue(damageAmount);
             EventResult eventResult = FabricLivingEvents.LIVING_HURT.invoker()
                     .onLivingHurt(livingEntity, damageSource, damageAmountValue);
             if (eventResult.isInterrupt()) {
-                preventHurting.setTrue();
+                return Either.left(Unit.INSTANCE);
             }
-            return damageAmountValue.getAsOptionalFloat().orElse(damageAmount);
+
+            return Either.right(damageAmountValue.getAsFloat());
         } else {
-            return damageAmount;
+            return Either.right(damageAmount);
         }
     }
 

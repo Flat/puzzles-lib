@@ -1,7 +1,7 @@
 package fuzs.puzzleslib.fabric.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedValue;
+import fuzs.puzzleslib.common.api.event.v1.data.MutableValue;
 import fuzs.puzzleslib.fabric.api.event.v1.FabricLivingEvents;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
@@ -20,13 +20,13 @@ abstract class MonsterFabricMixin extends PathfinderMob {
     }
 
     @ModifyReturnValue(method = "getProjectile", at = @At("RETURN"))
-    public ItemStack getProjectile(ItemStack projectileItemStack, ItemStack heldWeapon) {
+    public ItemStack getProjectile(ItemStack projectile, ItemStack heldWeapon) {
         if (heldWeapon.getItem() instanceof ProjectileWeaponItem) {
-            DefaultedValue<ItemStack> projectileItemStackValue = DefaultedValue.fromValue(projectileItemStack);
-            FabricLivingEvents.PICK_PROJECTILE.invoker().onPickProjectile(this, heldWeapon, projectileItemStackValue);
-            return projectileItemStackValue.getAsOptional().orElse(projectileItemStack);
+            MutableValue<ItemStack> projectileValue = MutableValue.fromValue(projectile);
+            FabricLivingEvents.PICK_PROJECTILE.invoker().onPickProjectile(this, heldWeapon, projectileValue);
+            return projectileValue.get();
         } else {
-            return projectileItemStack;
+            return projectile;
         }
     }
 }

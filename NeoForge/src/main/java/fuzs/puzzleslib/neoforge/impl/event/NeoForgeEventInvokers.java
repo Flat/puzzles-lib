@@ -821,9 +821,7 @@ public final class NeoForgeEventInvokers {
         INSTANCE.register(CalculateBlockBreakSpeedCallback.class,
                 PlayerEvent.BreakSpeed.class,
                 (CalculateBlockBreakSpeedCallback callback, PlayerEvent.BreakSpeed event) -> {
-                    DefaultedFloat breakSpeed = DefaultedFloat.fromEvent(event::setNewSpeed,
-                            event::getNewSpeed,
-                            event::getOriginalSpeed);
+                    MutableFloat breakSpeed = MutableFloat.fromEvent(event::setNewSpeed, event::getNewSpeed);
                     if (callback.onCalculateBlockBreakSpeed(event.getEntity(), event.getState(), breakSpeed)
                             .isInterrupt()) {
                         event.setCanceled(true);

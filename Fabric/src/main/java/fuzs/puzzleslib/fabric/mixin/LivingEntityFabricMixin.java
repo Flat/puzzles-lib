@@ -236,14 +236,17 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
     @ModifyVariable(method = "actuallyHurt", at = @At("HEAD"), ordinal = 0, argsOnly = true)
     protected float actuallyHurt(float dmg, ServerLevel level, DamageSource source, @Cancellable CallbackInfo callback) {
         if (!this.isInvulnerableTo(level, source)) {
-            MutableBoolean preventHurting = new MutableBoolean();
-            dmg = FabricEventImplHelper.onLivingHurt(LivingEntity.class.cast(this), level, source, dmg, preventHurting);
-            if (preventHurting.booleanValue()) {
+            Either<Unit, Float> result = FabricEventImplHelper.onLivingHurt(LivingEntity.class.cast(this),
+                    level,
+                    source,
+                    dmg);
+            result.ifLeft((Unit _) -> {
                 callback.cancel();
-            }
+            });
+            return result.right().orElse(dmg);
+        } else {
+            return dmg;
         }
-
-        return dmg;
     }
 
     @Shadow
@@ -401,14 +404,14 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
     }
 
     @ModifyReturnValue(method = "getProjectile", at = @At("RETURN"))
-    public ItemStack getProjectile(ItemStack projectileItemStack, ItemStack heldWeapon) {
+    public ItemStack getProjectile(ItemStack projectile, ItemStack heldWeapon) {
         if (heldWeapon.getItem() instanceof ProjectileWeaponItem) {
-            DefaultedValue<ItemStack> projectileItemStackValue = DefaultedValue.fromValue(projectileItemStack);
+            MutableValue<ItemStack> projectileValue = MutableValue.fromValue(projectile);
             FabricLivingEvents.PICK_PROJECTILE.invoker()
-                    .onPickProjectile(LivingEntity.class.cast(this), heldWeapon, projectileItemStackValue);
-            return projectileItemStackValue.getAsOptional().orElse(projectileItemStack);
+                    .onPickProjectile(LivingEntity.class.cast(this), heldWeapon, projectileValue);
+            return projectileValue.get();
         } else {
-            return projectileItemStack;
+            return projectile;
         }
     }
 }

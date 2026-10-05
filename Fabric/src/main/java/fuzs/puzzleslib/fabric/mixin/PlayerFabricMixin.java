@@ -2,9 +2,11 @@ package fuzs.puzzleslib.fabric.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Cancellable;
+import com.mojang.datafixers.util.Either;
+import com.mojang.datafixers.util.Unit;
 import fuzs.puzzleslib.common.api.event.v1.core.EventResult;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedFloat;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedValue;
+import fuzs.puzzleslib.common.api.event.v1.data.MutableFloat;
+import fuzs.puzzleslib.common.api.event.v1.data.MutableValue;
 import fuzs.puzzleslib.fabric.api.event.v1.FabricLivingEvents;
 import fuzs.puzzleslib.fabric.api.event.v1.FabricPlayerEvents;
 import fuzs.puzzleslib.fabric.impl.event.FabricEventImplHelper;
@@ -17,7 +19,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -42,15 +43,15 @@ abstract class PlayerFabricMixin extends LivingEntity {
     }
 
     @ModifyReturnValue(method = "getDestroySpeed", at = @At("TAIL"))
-    public float getDestroySpeed(float destroySpeed, BlockState state) {
-        DefaultedFloat defaultedFloat = DefaultedFloat.fromValue(destroySpeed);
-        if (FabricPlayerEvents.CALCULATE_BLOCK_BREAK_SPEED.invoker()
-                .onCalculateBlockBreakSpeed(Player.class.cast(this), state, defaultedFloat)
-                .isInterrupt()) {
-            defaultedFloat.accept(-1.0F);
+    public float getDestroySpeed(float speed, BlockState state) {
+        MutableFloat breakSpeed = MutableFloat.fromValue(speed);
+        EventResult result = FabricPlayerEvents.CALCULATE_BLOCK_BREAK_SPEED.invoker()
+                .onCalculateBlockBreakSpeed(Player.class.cast(this), state, breakSpeed);
+        if (result.isInterrupt()) {
+            breakSpeed.accept(-1.0F);
         }
 
-        return defaultedFloat.getAsOptionalFloat().orElse(destroySpeed);
+        return breakSpeed.getAsFloat();
     }
 
     @Inject(method = "die", at = @At("HEAD"), cancellable = true)
@@ -67,24 +68,24 @@ abstract class PlayerFabricMixin extends LivingEntity {
     @ModifyVariable(method = "actuallyHurt", at = @At("HEAD"), ordinal = 0, argsOnly = true)
     protected float actuallyHurt(float dmg, ServerLevel level, DamageSource source, @Cancellable CallbackInfo callback) {
         if (!this.isInvulnerableTo(level, source)) {
-            MutableBoolean cancelInjection = new MutableBoolean();
-            dmg = FabricEventImplHelper.onLivingHurt(this, level, source, dmg, cancelInjection);
-            if (cancelInjection.booleanValue()) {
+            Either<Unit, Float> result = FabricEventImplHelper.onLivingHurt(this, level, source, dmg);
+            result.ifLeft((Unit _) -> {
                 callback.cancel();
-            }
+            });
+            return result.right().orElse(dmg);
+        } else {
+            return dmg;
         }
-
-        return dmg;
     }
 
     @ModifyReturnValue(method = "getProjectile", at = @At("RETURN"))
-    public ItemStack getProjectile(ItemStack projectileItemStack, ItemStack heldWeapon) {
+    public ItemStack getProjectile(ItemStack projectile, ItemStack heldWeapon) {
         if (heldWeapon.getItem() instanceof ProjectileWeaponItem) {
-            DefaultedValue<ItemStack> projectileItemStackValue = DefaultedValue.fromValue(projectileItemStack);
-            FabricLivingEvents.PICK_PROJECTILE.invoker().onPickProjectile(this, heldWeapon, projectileItemStackValue);
-            return projectileItemStackValue.getAsOptional().orElse(projectileItemStack);
+            MutableValue<ItemStack> projectileValue = MutableValue.fromValue(projectile);
+            FabricLivingEvents.PICK_PROJECTILE.invoker().onPickProjectile(this, heldWeapon, projectileValue);
+            return projectileValue.get();
         } else {
-            return projectileItemStack;
+            return projectile;
         }
     }
 }
