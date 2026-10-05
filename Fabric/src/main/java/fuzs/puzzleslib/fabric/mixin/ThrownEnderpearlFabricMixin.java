@@ -4,8 +4,8 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import fuzs.puzzleslib.common.api.event.v1.core.EventResult;
+import fuzs.puzzleslib.common.api.event.v1.data.MutableFloat;
 import fuzs.puzzleslib.fabric.api.event.v1.FabricEntityEvents;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedFloat;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
@@ -26,9 +26,9 @@ abstract class ThrownEnderpearlFabricMixin extends ThrowableItemProjectile {
     @ModifyExpressionValue(method = "onHit",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;isAcceptingMessages()Z"))
-    protected boolean onHit(boolean isAcceptingMessages, HitResult hitResult, @Share("damageAmount") LocalRef<DefaultedFloat> damageAmountRef) {
+    protected boolean onHit(boolean isAcceptingMessages, HitResult hitResult, @Share("damageAmount") LocalRef<MutableFloat> damageAmountRef) {
         if (isAcceptingMessages && this.getOwner() instanceof ServerPlayer serverPlayer) {
-            damageAmountRef.set(DefaultedFloat.fromValue(5.0F));
+            damageAmountRef.set(MutableFloat.fromValue(5.0F));
             EventResult result = FabricEntityEvents.ENDER_PEARL_TELEPORT.invoker()
                     .onEnderPearlTeleport(serverPlayer,
                             this.oldPosition(),
@@ -46,7 +46,7 @@ abstract class ThrownEnderpearlFabricMixin extends ThrowableItemProjectile {
     @ModifyArg(method = "onHit",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/server/level/ServerPlayer;hurtServer(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/damagesource/DamageSource;F)Z"))
-    protected float onHit(float damageAmount, @Share("damageAmount") LocalRef<DefaultedFloat> damageAmountRef) {
-        return damageAmountRef.get().getAsOptionalFloat().orElse(damageAmount);
+    protected float onHit(float damageAmount, @Share("damageAmount") LocalRef<MutableFloat> damageAmountRef) {
+        return damageAmountRef.get().getAsFloat();
     }
 }

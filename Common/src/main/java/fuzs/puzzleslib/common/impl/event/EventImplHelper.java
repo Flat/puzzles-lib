@@ -1,8 +1,9 @@
 package fuzs.puzzleslib.common.impl.event;
 
+import fuzs.puzzleslib.common.api.event.v1.core.EventResult;
+import fuzs.puzzleslib.common.api.event.v1.data.MutableDouble;
 import fuzs.puzzleslib.common.api.event.v1.entity.living.LivingJumpCallback;
 import fuzs.puzzleslib.common.impl.core.proxy.ProxyImpl;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedDouble;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -16,7 +17,6 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
-import java.util.OptionalDouble;
 
 public final class EventImplHelper {
 
@@ -26,29 +26,26 @@ public final class EventImplHelper {
 
     public static void onLivingJump(LivingJumpCallback callback, LivingEntity entity) {
         Vec3 deltaMovement = entity.getDeltaMovement();
-        DefaultedDouble jumpPower = DefaultedDouble.fromValue(deltaMovement.y);
-        OptionalDouble newJumpPower;
-        if (callback.onLivingJump(entity, jumpPower).isInterrupt()) {
-            newJumpPower = OptionalDouble.of(0.0);
-        } else {
-            newJumpPower = jumpPower.getAsOptionalDouble();
-        }
-
-        if (newJumpPower.isPresent()) {
-            entity.setDeltaMovement(deltaMovement.x, newJumpPower.getAsDouble(), deltaMovement.z);
+        double jumpPower = deltaMovement.y;
+        MutableDouble jumpPowerValue = MutableDouble.fromValue(jumpPower);
+        EventResult result = callback.onLivingJump(entity, jumpPowerValue);
+        if (result.isInterrupt()) {
+            entity.setDeltaMovement(deltaMovement.x, 0.0, deltaMovement.z);
+        } else if (jumpPowerValue.getAsDouble() != jumpPower) {
+            entity.setDeltaMovement(deltaMovement.x, jumpPowerValue.getAsDouble(), deltaMovement.z);
         }
     }
 
-    @Nullable public static Player getPlayerFromContainerMenu(AbstractContainerMenu abstractContainerMenu) {
+    public static @Nullable Player getPlayerFromContainerMenu(AbstractContainerMenu abstractContainerMenu) {
         for (Slot slot : abstractContainerMenu.slots) {
             if (slot.container instanceof Inventory inventory) {
                 return inventory.player;
             }
         }
 
-        MinecraftServer minecraftServer = ProxyImpl.get().getMinecraftServer();
-        if (minecraftServer != null) {
-            for (ServerPlayer serverPlayer : minecraftServer.getPlayerList().getPlayers()) {
+        MinecraftServer server = ProxyImpl.get().getMinecraftServer();
+        if (server != null) {
+            for (ServerPlayer serverPlayer : server.getPlayerList().getPlayers()) {
                 if (serverPlayer.containerMenu == abstractContainerMenu) {
                     return serverPlayer;
                 }

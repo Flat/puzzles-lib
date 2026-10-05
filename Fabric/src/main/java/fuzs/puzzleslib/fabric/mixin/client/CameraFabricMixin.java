@@ -3,7 +3,6 @@ package fuzs.puzzleslib.fabric.mixin.client;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import fuzs.puzzleslib.common.api.event.v1.data.MutableFloat;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedFloat;
 import fuzs.puzzleslib.fabric.api.client.event.v1.FabricRendererEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.util.Mth;
@@ -49,9 +48,9 @@ abstract class CameraFabricMixin {
 
     @ModifyReturnValue(method = "modifyFovBasedOnDeathOrFluid", at = @At("TAIL"))
     private float modifyFovBasedOnDeathOrFluid(float fov, @Local(ordinal = 0, argsOnly = true) float partialTicks) {
-        DefaultedFloat fieldOfView = DefaultedFloat.fromValue(fov);
+        MutableFloat fieldOfView = MutableFloat.fromValue(fov);
         FabricRendererEvents.COMPUTE_FIELD_OF_VIEW.invoker()
                 .onComputeFieldOfView(Camera.class.cast(this), partialTicks, fieldOfView);
-        return fieldOfView.getAsOptionalFloat().orElse(fov);
+        return fieldOfView.getAsFloat();
     }
 }

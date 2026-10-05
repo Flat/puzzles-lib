@@ -13,10 +13,6 @@ import fuzs.puzzleslib.common.api.event.v1.server.*;
 import fuzs.puzzleslib.common.impl.PuzzlesLib;
 import fuzs.puzzleslib.common.impl.event.EventImplHelper;
 import fuzs.puzzleslib.common.impl.event.PotentialSpawnsList;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedDouble;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedFloat;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedInt;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedValue;
 import fuzs.puzzleslib.neoforge.api.core.v1.NeoForgeModContainerHelper;
 import fuzs.puzzleslib.neoforge.mixin.accessor.EntityNeoForgeAccessor;
 import net.minecraft.core.Holder;
@@ -254,9 +250,8 @@ public final class NeoForgeEventInvokers {
         INSTANCE.register(LivingExperienceDropCallback.class,
                 LivingExperienceDropEvent.class,
                 (LivingExperienceDropCallback callback, LivingExperienceDropEvent event) -> {
-                    DefaultedInt droppedExperience = DefaultedInt.fromEvent(event::setDroppedExperience,
-                            event::getDroppedExperience,
-                            event::getOriginalExperience);
+                    MutableInt droppedExperience = MutableInt.fromEvent(event::setDroppedExperience,
+                            event::getDroppedExperience);
                     if (callback.onLivingExperienceDrop(event.getEntity(),
                             event.getAttackingPlayer(),
                             droppedExperience).isInterrupt()) {
@@ -360,15 +355,11 @@ public final class NeoForgeEventInvokers {
         INSTANCE.register(CreateAnvilResultCallback.class,
                 AnvilUpdateEvent.class,
                 (CreateAnvilResultCallback callback, AnvilUpdateEvent event) -> {
-                    DefaultedValue<ItemStack> outputItemStack = DefaultedValue.fromEvent(event::setOutput,
-                            event::getOutput,
-                            event.getVanillaResult()::output);
-                    DefaultedInt enchantmentLevelCost = DefaultedInt.fromEvent(event::setXpCost,
-                            event::getXpCost,
-                            event.getVanillaResult()::xpCost);
-                    DefaultedInt repairMaterialCost = DefaultedInt.fromEvent(event::setMaterialCost,
-                            event::getMaterialCost,
-                            event.getVanillaResult()::materialCost);
+                    MutableValue<ItemStack> outputItemStack = MutableValue.fromEvent(event::setOutput,
+                            event::getOutput);
+                    MutableInt enchantmentLevelCost = MutableInt.fromEvent(event::setXpCost, event::getXpCost);
+                    MutableInt repairMaterialCost = MutableInt.fromEvent(event::setMaterialCost,
+                            event::getMaterialCost);
                     if (callback.onCreateAnvilResult(event.getPlayer(),
                             event.getLeft(),
                             event.getRight(),
@@ -482,9 +473,8 @@ public final class NeoForgeEventInvokers {
                         return;
                     }
 
-                    DefaultedFloat blockedDamage = DefaultedFloat.fromEvent(event::setBlockedDamage,
-                            event::getBlockedDamage,
-                            event::getOriginalBlockedDamage);
+                    MutableFloat blockedDamage = MutableFloat.fromEvent(event::setBlockedDamage,
+                            event::getBlockedDamage);
                     if (callback.onShieldBlock(event.getEntity(), event.getDamageSource(), blockedDamage)
                             .isInterrupt()) {
                         event.setBlocked(true);
@@ -798,15 +788,10 @@ public final class NeoForgeEventInvokers {
         INSTANCE.register(LivingKnockBackCallback.class,
                 LivingKnockBackEvent.class,
                 (LivingKnockBackCallback callback, LivingKnockBackEvent event) -> {
-                    DefaultedDouble strength = DefaultedDouble.fromEvent((double v) -> event.setStrength((float) v),
-                            event::getStrength,
-                            event::getOriginalStrength);
-                    DefaultedDouble ratioX = DefaultedDouble.fromEvent(event::setRatioX,
-                            event::getRatioX,
-                            event::getOriginalRatioX);
-                    DefaultedDouble ratioZ = DefaultedDouble.fromEvent(event::setRatioZ,
-                            event::getRatioZ,
-                            event::getOriginalRatioZ);
+                    MutableDouble strength = MutableDouble.fromEvent((double v) -> event.setStrength((float) v),
+                            event::getStrength);
+                    MutableDouble ratioX = MutableDouble.fromEvent(event::setRatioX, event::getRatioX);
+                    MutableDouble ratioZ = MutableDouble.fromEvent(event::setRatioZ, event::getRatioZ);
                     if (callback.onLivingKnockBack(event.getEntity(), strength, ratioX, ratioZ).isInterrupt()) {
                         event.setCanceled(true);
                     }
@@ -879,9 +864,8 @@ public final class NeoForgeEventInvokers {
         INSTANCE.register(LivingChangeTargetCallback.class,
                 LivingChangeTargetEvent.class,
                 (LivingChangeTargetCallback callback, LivingChangeTargetEvent event) -> {
-                    DefaultedValue<LivingEntity> target = DefaultedValue.fromEvent(event::setNewAboutToBeSetTarget,
-                            event::getNewAboutToBeSetTarget,
-                            event::getOriginalAboutToBeSetTarget);
+                    MutableValue<LivingEntity> target = MutableValue.fromEvent(event::setNewAboutToBeSetTarget,
+                            event::getNewAboutToBeSetTarget);
                     if (callback.onLivingChangeTarget(event.getEntity(), target).isInterrupt()) {
                         event.setCanceled(true);
                     }

@@ -9,15 +9,15 @@ import com.llamalad7.mixinextras.sugar.ref.LocalBooleanRef;
 import com.llamalad7.mixinextras.sugar.ref.LocalDoubleRef;
 import com.llamalad7.mixinextras.sugar.ref.LocalFloatRef;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
+import com.mojang.datafixers.util.Either;
+import com.mojang.datafixers.util.Unit;
 import fuzs.puzzleslib.common.api.event.v1.core.EventResult;
 import fuzs.puzzleslib.common.api.event.v1.data.MutableDouble;
 import fuzs.puzzleslib.common.api.event.v1.data.MutableFloat;
+import fuzs.puzzleslib.common.api.event.v1.data.MutableInt;
+import fuzs.puzzleslib.common.api.event.v1.data.MutableValue;
 import fuzs.puzzleslib.common.impl.PuzzlesLib;
 import fuzs.puzzleslib.common.impl.event.EventImplHelper;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedDouble;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedFloat;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedInt;
-import fuzs.puzzleslib.common.impl.event.data.DefaultedValue;
 import fuzs.puzzleslib.fabric.api.event.v1.FabricLivingEvents;
 import fuzs.puzzleslib.fabric.impl.event.CapturedDropsEntity;
 import fuzs.puzzleslib.fabric.impl.event.FabricEventImplHelper;
@@ -29,14 +29,12 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.level.Level;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
@@ -69,9 +67,9 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
 
     @Inject(method = "die", at = @At("HEAD"), cancellable = true)
     public void die(DamageSource source, CallbackInfo callback) {
-        EventResult eventResult = FabricLivingEvents.LIVING_DEATH.invoker()
+        EventResult result = FabricLivingEvents.LIVING_DEATH.invoker()
                 .onLivingDeath(LivingEntity.class.cast(this), source);
-        if (eventResult.isInterrupt()) {
+        if (result.isInterrupt()) {
             callback.cancel();
         }
     }
@@ -84,33 +82,36 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
             cancellable = true)
     public void startUsingItem(InteractionHand hand, CallbackInfo callback) {
         // this injects after the field is already updated, so it is fine to use instead of ItemStack::getUseDuration
-        DefaultedInt useItemRemaining = DefaultedInt.fromValue(this.useItemRemaining);
-        EventResult eventResult = FabricLivingEvents.USE_ITEM_START.invoker()
-                .onUseItemStart(LivingEntity.class.cast(this), this.useItem, hand, useItemRemaining);
-        if (eventResult.isInterrupt()) {
+        MutableInt useItemRemainingValue = MutableInt.fromValue(this.useItemRemaining);
+        EventResult result = FabricLivingEvents.USE_ITEM_START.invoker()
+                .onUseItemStart(LivingEntity.class.cast(this), this.useItem, hand, useItemRemainingValue);
+        if (result.isInterrupt()) {
             this.useItem = ItemStack.EMPTY;
             this.useItemRemaining = 0;
             callback.cancel();
         } else {
-            this.useItemRemaining = useItemRemaining.getAsOptionalInt().orElse(this.useItemRemaining);
+            this.useItemRemaining = useItemRemainingValue.getAsInt();
         }
     }
 
     @Inject(method = "updateUsingItem", at = @At("HEAD"), cancellable = true)
     protected void updateUsingItem(ItemStack useItem, CallbackInfo callback) {
         if (!useItem.isEmpty()) {
-            DefaultedInt remainingUseDuration = DefaultedInt.fromValue(this.getUseItemRemainingTicks());
-            EventResult eventResult = FabricLivingEvents.USE_ITEM_TICK.invoker()
+            int originalRemainingUseDuration = this.getUseItemRemainingTicks();
+            MutableInt remainingUseDuration = MutableInt.fromValue(originalRemainingUseDuration);
+            EventResult result = FabricLivingEvents.USE_ITEM_TICK.invoker()
                     .onUseItemTick(LivingEntity.class.cast(this),
                             useItem,
                             this.getUsedItemHand(),
                             remainingUseDuration);
             // --this.useItemRemaining == 0 runs at the end of this method, when 0 is set increase by one again,
             // so that LivingEntity::completeUsingItem does run
-            remainingUseDuration.getAsOptionalInt()
-                    .ifPresent((int useItemRemaining) -> this.useItemRemaining =
-                            useItemRemaining == 0 ? 1 : useItemRemaining);
-            if (eventResult.isInterrupt()) {
+            int updatedUseItemRemaining = remainingUseDuration.getAsInt();
+            if (updatedUseItemRemaining != originalRemainingUseDuration) {
+                this.useItemRemaining = updatedUseItemRemaining == 0 ? 1 : updatedUseItemRemaining;
+            }
+
+            if (result.isInterrupt()) {
                 // this copies LivingEntity::updateUsingItem without calling ItemStack::onUseTick
                 if (--this.useItemRemaining == 0 && !this.level().isClientSide() && !useItem.useOnRelease()) {
                     this.completeUsingItem();
@@ -142,13 +143,13 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
     @ModifyVariable(method = "completeUsingItem", at = @At("STORE"), ordinal = 0)
     protected ItemStack completeUsingItem(ItemStack result, @Share("originalUseItem") LocalRef<ItemStack> originalUseItem) {
         Objects.requireNonNull(originalUseItem.get(), "original use item is null");
-        DefaultedValue<ItemStack> itemStack = DefaultedValue.fromValue(result);
+        MutableValue<ItemStack> resultValue = MutableValue.fromValue(result);
         FabricLivingEvents.USE_ITEM_FINISH.invoker()
                 .onUseItemFinish(LivingEntity.class.cast(this),
-                        itemStack,
+                        resultValue,
                         originalUseItem.get(),
                         this.getUsedItemHand());
-        return itemStack.getAsOptional().orElse(result);
+        return resultValue.get();
     }
 
     @Shadow
@@ -209,26 +210,21 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
         }
     }
 
-    @Inject(method = "dropExperience",
-            at = @At(value = "INVOKE",
-                     target = "Lnet/minecraft/world/entity/ExperienceOrb;award(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/phys/Vec3;I)V"),
-            cancellable = true)
-    protected void dropExperience(ServerLevel level, @Nullable Entity killer, CallbackInfo callback) {
-        DefaultedInt experienceReward = DefaultedInt.fromValue(this.getBaseExperienceReward(level));
-        EventResult eventResult = FabricLivingEvents.EXPERIENCE_DROP.invoker()
-                .onLivingExperienceDrop(LivingEntity.class.cast(this), this.getLastHurtByPlayer(), experienceReward);
-        if (eventResult.isInterrupt()) {
+    @ModifyArg(method = "dropExperience",
+               at = @At(value = "INVOKE",
+                        target = "Lnet/minecraft/world/entity/ExperienceOrb;award(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/phys/Vec3;I)V"))
+    protected int dropExperience(int experienceReward, @Cancellable CallbackInfo callback) {
+        MutableInt experienceRewardValue = MutableInt.fromValue(experienceReward);
+        EventResult result = FabricLivingEvents.EXPERIENCE_DROP.invoker()
+                .onLivingExperienceDrop(LivingEntity.class.cast(this),
+                        this.getLastHurtByPlayer(),
+                        experienceRewardValue);
+        if (result.isInterrupt()) {
             callback.cancel();
-        } else {
-            experienceReward.getAsOptionalInt().ifPresent((int value) -> {
-                ExperienceOrb.award((ServerLevel) this.level(), this.position(), value);
-                callback.cancel();
-            });
         }
-    }
 
-    @Shadow
-    protected abstract int getBaseExperienceReward(ServerLevel level);
+        return experienceRewardValue.getAsInt();
+    }
 
     @Shadow
     public abstract @Nullable Player getLastHurtByPlayer();
@@ -256,10 +252,10 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
                            at = @At(value = "INVOKE",
                                     target = "Lnet/minecraft/world/item/component/BlocksAttacks;resolveBlockedDamage(Lnet/minecraft/world/damagesource/DamageSource;FD)F"))
     public float applyItemBlocking(float blockedDamage, ServerLevel level, DamageSource source, float damage, @Cancellable CallbackInfoReturnable<Float> callback) {
-        DefaultedFloat blockedDamageValue = DefaultedFloat.fromValue(blockedDamage);
-        EventResult eventResult = FabricLivingEvents.SHIELD_BLOCK.invoker()
+        MutableFloat blockedDamageValue = MutableFloat.fromValue(blockedDamage);
+        EventResult result = FabricLivingEvents.SHIELD_BLOCK.invoker()
                 .onShieldBlock(LivingEntity.class.cast(this), source, blockedDamageValue);
-        if (eventResult.isInterrupt()) {
+        if (result.isInterrupt()) {
             callback.setReturnValue(0.0F);
             return 0.0F;
         } else {
@@ -274,9 +270,9 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
             argsOnly = true) LocalFloatRef damageMultiplierRef) {
         MutableDouble fallDistance = MutableDouble.fromEvent(fallDistanceRef::set, fallDistanceRef::get);
         MutableFloat damageMultiplier = MutableFloat.fromEvent(damageMultiplierRef::set, damageMultiplierRef::get);
-        EventResult eventResult = FabricLivingEvents.LIVING_FALL.invoker()
+        EventResult result = FabricLivingEvents.LIVING_FALL.invoker()
                 .onLivingFall(LivingEntity.class.cast(this), fallDistance, damageMultiplier);
-        if (eventResult.isInterrupt()) {
+        if (result.isInterrupt()) {
             callback.setReturnValue(false);
         }
     }
@@ -292,9 +288,9 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
         MutableDouble knockbackStrength = MutableDouble.fromEvent(strengthRef::set, strengthRef::get);
         MutableDouble ratioX = MutableDouble.fromEvent(ratioXRef::set, ratioXRef::get);
         MutableDouble ratioZ = MutableDouble.fromEvent(ratioZRef::set, ratioZRef::get);
-        EventResult eventResult = FabricLivingEvents.LIVING_KNOCK_BACK.invoker()
+        EventResult result = FabricLivingEvents.LIVING_KNOCK_BACK.invoker()
                 .onLivingKnockBack(LivingEntity.class.cast(this), knockbackStrength, ratioX, ratioZ);
-        if (eventResult.isInterrupt()) {
+        if (result.isInterrupt()) {
             callback.cancel();
         }
     }
@@ -312,10 +308,10 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
     public void canBeAffected(MobEffectInstance newEffect, CallbackInfoReturnable<Boolean> callback) {
         // Forge also adds this patch to spiders, but let's just say no one wants to remove poison immunity from them
         // Forge is incomplete anyway, with mobs are not affected by this event when checking for the wither effect
-        EventResult eventResult = FabricLivingEvents.MOB_EFFECT_AFFECTS.invoker()
+        EventResult result = FabricLivingEvents.MOB_EFFECT_AFFECTS.invoker()
                 .onMobEffectAffects(LivingEntity.class.cast(this), newEffect);
-        if (eventResult.isInterrupt()) {
-            callback.setReturnValue(eventResult.getAsBoolean());
+        if (result.isInterrupt()) {
+            callback.setReturnValue(result.getAsBoolean());
         }
     }
 
@@ -323,9 +319,9 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
     public void removeEffect(Holder<MobEffect> effect, CallbackInfoReturnable<Boolean> callback) {
         MobEffectInstance mobEffect = this.getEffect(effect);
         if (mobEffect != null) {
-            EventResult eventResult = FabricLivingEvents.MOB_EFFECT_REMOVE.invoker()
+            EventResult result = FabricLivingEvents.MOB_EFFECT_REMOVE.invoker()
                     .onMobEffectRemove(LivingEntity.class.cast(this), mobEffect);
-            if (eventResult.isInterrupt()) {
+            if (result.isInterrupt()) {
                 callback.setReturnValue(false);
             }
         }
@@ -342,9 +338,9 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
 
         Map<Holder<MobEffect>, MobEffectInstance> removedActiveEffects = new HashMap<>();
         for (Map.Entry<Holder<MobEffect>, MobEffectInstance> entry : this.activeEffects.entrySet()) {
-            EventResult eventResult = FabricLivingEvents.MOB_EFFECT_REMOVE.invoker()
+            EventResult result = FabricLivingEvents.MOB_EFFECT_REMOVE.invoker()
                     .onMobEffectRemove(LivingEntity.class.cast(this), entry.getValue());
-            if (eventResult.isPass()) {
+            if (result.isPass()) {
                 removedActiveEffects.put(entry.getKey(), entry.getValue());
             }
         }
@@ -397,10 +393,10 @@ abstract class LivingEntityFabricMixin extends Entity implements CapturedDropsEn
                at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Mth;clamp(DDD)D"),
                index = 0)
     public double getVisibilityPercent(double visibilityPercent, @Local(argsOnly = true) @Nullable Entity targetingEntity) {
-        DefaultedDouble visibilityPercentValue = DefaultedDouble.fromValue(visibilityPercent);
+        MutableDouble visibilityPercentValue = MutableDouble.fromValue(visibilityPercent);
         FabricLivingEvents.CALCULATE_LIVING_VISIBILITY.invoker()
                 .onCalculateLivingVisibility(LivingEntity.class.cast(this), targetingEntity, visibilityPercentValue);
-        return visibilityPercentValue.getAsOptionalDouble().orElse(visibilityPercent);
+        return visibilityPercentValue.getAsDouble();
     }
 
     @ModifyReturnValue(method = "getProjectile", at = @At("RETURN"))
