@@ -2,14 +2,9 @@ package fuzs.puzzleslib.common.api.init.v3.family;
 
 import com.google.common.collect.ImmutableMap;
 import fuzs.puzzleslib.common.api.core.v1.context.GameplayContentContext;
-import fuzs.puzzleslib.common.api.core.v1.context.ItemComponentsContext;
 import fuzs.puzzleslib.common.api.init.v3.registry.RegistryManager;
 import fuzs.puzzleslib.common.impl.init.BlockSetFamilyRegistrar;
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentGetter;
-import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.dispenser.BoatDispenseItemBehavior;
 import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -18,14 +13,12 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.component.CookingFuel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.WoodType;
-import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProviders;
 import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
 import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 import org.joml.Vector2i;
@@ -53,28 +46,7 @@ public interface BlockSetFamily {
             BlockSetVariant.SHELF,
             BuiltInRegistries.BLOCK_ENTITY_TYPE.wrapAsHolder(BlockEntityTypes.SHELF));
     /**
-     * @see #registerFor(GameplayContentContext, Map)
-     */
-    Map<BlockSetVariant, Vector2ic> VARIANT_WOODEN_FLAMMABLE = ImmutableMap.of(BlockSetVariant.LOG,
-            new Vector2i(5, 5),
-            BlockSetVariant.WOOD,
-            new Vector2i(5, 5),
-            BlockSetVariant.STRIPPED_LOG,
-            new Vector2i(5, 5),
-            BlockSetVariant.STRIPPED_WOOD,
-            new Vector2i(5, 5),
-            BlockSetVariant.STAIRS,
-            new Vector2i(5, 20),
-            BlockSetVariant.SLAB,
-            new Vector2i(5, 20),
-            BlockSetVariant.FENCE,
-            new Vector2i(5, 20),
-            BlockSetVariant.FENCE_GATE,
-            new Vector2i(5, 20),
-            BlockSetVariant.SHELF,
-            new Vector2i(30, 20));
-    /**
-     * @see #registerFor(ItemComponentsContext, Map)
+     * @see #registerFor(GameplayContentContext, Map, Map)
      */
     Map<BlockSetVariant, ResourceKey<ContextIntProvider>> VARIANT_WOODEN_COOKING_TIME = ImmutableMap.<BlockSetVariant, ResourceKey<ContextIntProvider>>builder()
             .put(BlockSetVariant.SLAB, ContextIntProviders.COOKING_TIME_WOOD_SLABS)
@@ -95,6 +67,27 @@ public interface BlockSetFamily {
             .put(BlockSetVariant.PRESSURE_PLATE, ContextIntProviders.COOKING_TIME_WOOD_BLOCKS)
             .put(BlockSetVariant.SHELF, ContextIntProviders.COOKING_TIME_WOOD_BLOCKS)
             .build();
+    /**
+     * @see #registerFor(GameplayContentContext, Map, Map)
+     */
+    Map<BlockSetVariant, Vector2ic> VARIANT_WOODEN_FLAMMABLE = ImmutableMap.of(BlockSetVariant.LOG,
+            new Vector2i(5, 5),
+            BlockSetVariant.WOOD,
+            new Vector2i(5, 5),
+            BlockSetVariant.STRIPPED_LOG,
+            new Vector2i(5, 5),
+            BlockSetVariant.STRIPPED_WOOD,
+            new Vector2i(5, 5),
+            BlockSetVariant.STAIRS,
+            new Vector2i(5, 20),
+            BlockSetVariant.SLAB,
+            new Vector2i(5, 20),
+            BlockSetVariant.FENCE,
+            new Vector2i(5, 20),
+            BlockSetVariant.FENCE_GATE,
+            new Vector2i(5, 20),
+            BlockSetVariant.SHELF,
+            new Vector2i(30, 20));
     /**
      * @see #registerFor(Map)
      */
@@ -187,25 +180,22 @@ public interface BlockSetFamily {
         });
     }
 
-    default void registerFor(GameplayContentContext context, Map<BlockSetVariant, Vector2ic> variants) {
-        this.getBlockVariants().forEach((BlockSetVariant variant, Holder.Reference<Block> holder) -> {
-            Vector2ic flammable = variants.get(variant);
-            if (flammable != null) {
-                context.registerFlammable(holder, flammable.x(), flammable.y());
-            }
-        });
+    @Deprecated
+    default void registerFor(GameplayContentContext context, Map<BlockSetVariant, Vector2ic> flammableVariants) {
+        this.registerFor(context, Map.of(), flammableVariants);
     }
 
-    default void registerFor(ItemComponentsContext context, Map<BlockSetVariant, ResourceKey<ContextIntProvider>> variants) {
+    default void registerFor(GameplayContentContext context, Map<BlockSetVariant, ResourceKey<ContextIntProvider>> fuelVariants, Map<BlockSetVariant, Vector2ic> flammableVariants) {
         this.getItemVariants().forEach((BlockSetVariant variant, Holder.Reference<Item> holder) -> {
-            ResourceKey<ContextIntProvider> cookingTime = variants.get(variant);
-            if (cookingTime != null) {
-                context.registerItemComponentsPatch(holder.value(),
-                        (DataComponentGetter components, DataComponentMap.Builder builder, HolderLookup.Provider lookupProvider, Item item) -> {
-                            builder.set(DataComponents.COOKING_FUEL,
-                                    new CookingFuel(cookingTime,
-                                            ContextFloatProviders.COOKING_DEFAULT_SPEED_MULTIPLIER));
-                        });
+            ResourceKey<ContextIntProvider> fuelValue = fuelVariants.get(variant);
+            if (fuelValue != null) {
+                context.registerFuel(holder, fuelValue);
+            }
+        });
+        this.getBlockVariants().forEach((BlockSetVariant variant, Holder.Reference<Block> holder) -> {
+            Vector2ic flammable = flammableVariants.get(variant);
+            if (flammable != null) {
+                context.registerFlammable(holder, flammable.x(), flammable.y());
             }
         });
     }

@@ -1,12 +1,23 @@
 package fuzs.puzzleslib.common.api.core.v1.context;
 
 import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
 
 /**
  * Register content to various gameplay registries.
  */
 public interface GameplayContentContext {
+    /**
+     * Register items as furnace fuel (also applies to blast furnaces and smokers).
+     *
+     * @param fuelItem  the fuel item
+     * @param fuelValue the burn time context provider of the fuel
+     */
+    void registerFuel(Holder<? extends ItemLike> fuelItem, ResourceKey<ContextIntProvider> fuelValue);
+
     /**
      * Register blocks that fire can spread to.
      *
@@ -15,6 +26,14 @@ public interface GameplayContentContext {
      * @param flammability   a value determining how easily this block catches on fire from nearby fires
      */
     void registerFlammable(Holder<Block> flammableBlock, int encouragement, int flammability);
+
+    /**
+     * Register items for usage with the composter.
+     *
+     * @param compostableItem  the compostable item
+     * @param compostingChance the context provider determining the chance the compost level will increase
+     */
+    void registerCompostable(Holder<? extends ItemLike> compostableItem, ResourceKey<ContextIntProvider> compostingChance);
 
     /**
      * Register blocks to be converted from interacting with an axe.

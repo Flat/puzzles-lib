@@ -6,13 +6,22 @@ import fuzs.puzzleslib.common.api.data.v3.core.DataProviderContext;
 import fuzs.puzzleslib.neoforge.api.data.v3.core.DataProviderBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.Compostable;
+import net.minecraft.world.item.component.CookingFuel;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FireBlock;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProviders;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.data.DataMapProvider;
+import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
 import net.neoforged.neoforge.registries.datamaps.builtin.NeoForgeDataMaps;
 import net.neoforged.neoforge.registries.datamaps.builtin.Oxidizable;
@@ -22,6 +31,8 @@ import net.neoforged.neoforge.registries.datamaps.builtin.Waxable;
 import java.util.*;
 
 public final class GameplayContentContextNeoForgeImpl implements GameplayContentContext {
+    private final Map<Holder<? extends ItemLike>, ResourceKey<ContextIntProvider>> furnaceFuels = new LinkedHashMap<>();
+    private final Map<Holder<? extends ItemLike>, ResourceKey<ContextIntProvider>> compostables = new LinkedHashMap<>();
     private final Map<Holder<Block>, Flammable> flammables = new LinkedHashMap<>();
     private final DataMapBuilder<Transformable> transformables;
     private final DataMapBuilder<Oxidizable> oxidizables;
@@ -33,6 +44,25 @@ public final class GameplayContentContextNeoForgeImpl implements GameplayContent
         this.transformables = new DataMapBuilder<>(modId, NeoForgeDataMaps.TRANSFORMABLES);
         this.oxidizables = new DataMapBuilder<>(modId, NeoForgeDataMaps.OXIDIZABLES);
         this.waxables = new DataMapBuilder<>(modId, NeoForgeDataMaps.WAXABLES);
+    }
+
+    @Override
+    public void registerFuel(Holder<? extends ItemLike> fuelItem, ResourceKey<ContextIntProvider> fuelValue) {
+        Objects.requireNonNull(fuelItem, "fuel item is null");
+        Objects.requireNonNull(fuelValue, "fuel value is null");
+        if (this.furnaceFuels.isEmpty()) {
+            this.eventBus.addListener((final ModifyDefaultComponentsEvent event) -> {
+                this.furnaceFuels.forEach((Holder<? extends ItemLike> holder, ResourceKey<ContextIntProvider> key) -> {
+                    event.modify(holder.value(),
+                            (DataComponentMap.Builder builder, HolderLookup.Provider context, Item item) -> {
+                                builder.set(DataComponents.COOKING_FUEL,
+                                        new CookingFuel(key, ContextFloatProviders.COOKING_DEFAULT_SPEED_MULTIPLIER));
+                            });
+                });
+            });
+        }
+
+        this.furnaceFuels.put(fuelItem, fuelValue);
     }
 
     @Override
@@ -53,6 +83,24 @@ public final class GameplayContentContextNeoForgeImpl implements GameplayContent
         }
 
         this.flammables.put(flammableBlock, new Flammable(encouragement, flammability));
+    }
+
+    @Override
+    public void registerCompostable(Holder<? extends ItemLike> compostableItem, ResourceKey<ContextIntProvider> compostingChance) {
+        Objects.requireNonNull(compostableItem, "compostable item is null");
+        Objects.requireNonNull(compostingChance, "composting chance is null");
+        if (this.compostables.isEmpty()) {
+            this.eventBus.addListener((final ModifyDefaultComponentsEvent event) -> {
+                this.compostables.forEach((Holder<? extends ItemLike> holder, ResourceKey<ContextIntProvider> key) -> {
+                    event.modify(holder.value(),
+                            (DataComponentMap.Builder builder, HolderLookup.Provider context, Item item) -> {
+                                builder.set(DataComponents.COMPOSTABLE, new Compostable(key));
+                            });
+                });
+            });
+        }
+
+        this.compostables.put(compostableItem, compostingChance);
     }
 
     @Override
