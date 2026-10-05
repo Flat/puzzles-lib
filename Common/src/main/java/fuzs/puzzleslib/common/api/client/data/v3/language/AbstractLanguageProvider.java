@@ -165,10 +165,22 @@ public abstract class AbstractLanguageProvider implements DataProvider, Translat
      * @param blockSetFamily     the block set family
      * @param baseName           the base name the variant names are derived from
      */
+    @Deprecated
     public void generateFor(TranslationBuilder translationBuilder, BlockSetFamily blockSetFamily, String baseName) {
-        this.generateFor(translationBuilder::add, blockSetFamily.getBlockVariants(), VARIANT_BLOCK_NAMES, baseName);
-        this.generateFor(translationBuilder::add, blockSetFamily.getItemVariants(), VARIANT_ITEM_NAMES, baseName);
-        this.generateFor(translationBuilder::add, blockSetFamily.getEntityVariants(), VARIANT_ENTITY_NAMES, baseName);
+        this.generateFor(blockSetFamily, baseName);
+    }
+
+    /**
+     * Generates translations for all blocks, items, and entity types of the given block set family using the default
+     * variant name providers.
+     *
+     * @param blockSetFamily the block set family
+     * @param baseName       the base name the variant names are derived from
+     */
+    public void generateFor(BlockSetFamily blockSetFamily, String baseName) {
+        this.generateFor(this::add, blockSetFamily.getBlockVariants(), VARIANT_BLOCK_NAMES, baseName);
+        this.generateFor(this::add, blockSetFamily.getItemVariants(), VARIANT_ITEM_NAMES, baseName);
+        this.generateFor(this::add, blockSetFamily.getEntityVariants(), VARIANT_ENTITY_NAMES, baseName);
     }
 
     /**
@@ -230,20 +242,20 @@ public abstract class AbstractLanguageProvider implements DataProvider, Translat
      * Validates that all required translation keys of the given registry have been added, throwing for missing
      * translations of the mod.
      *
-     * @param predicate                  the predicate used for checking that a translation key has been added
-     * @param registry                   the registry to validate
-     * @param holderTranslationCollector the collector used for deriving the translation key of each registry entry
-     * @param <T>                        the registry element type
+     * @param predicate the predicate used for checking that a translation key has been added
+     * @param registry  the registry to validate
+     * @param collector the collector used for deriving the translation key of each registry entry
+     * @param <T>       the registry element type
      * @see net.minecraft.server.Bootstrap#getMissingTranslations(Language)
      */
-    private <T> void verifyRequiredTranslationKeys(Predicate<String> predicate, Registry<T> registry, HolderTranslationCollector<T> holderTranslationCollector) {
+    private <T> void verifyRequiredTranslationKeys(Predicate<String> predicate, Registry<T> registry, HolderTranslationCollector<T> collector) {
         registry.listElements()
                 .filter((Holder.Reference<T> holder) -> holder.key()
                         .identifier()
                         .getNamespace()
                         .equals(this.filePath.getNamespace()))
                 .forEach((Holder.Reference<T> holder) -> {
-                    holderTranslationCollector.accept((String translationKey, String value) -> {
+                    collector.accept((String translationKey, String value) -> {
                         Objects.requireNonNull(translationKey, "translation key is null");
                         if (this.mustHaveTranslationKey(holder, translationKey) && !predicate.test(translationKey)) {
                             throw new IllegalStateException("Missing translation key '%s' for '%s'".formatted(
