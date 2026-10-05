@@ -9,11 +9,11 @@ import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(MenuProviderWithData.class)
 public interface MenuProviderWithDataFabricMixin<T> extends ExtendedMenuProvider<T> {
-    @Shadow
-    T getMenuData(@Nullable ServerPlayer serverPlayer);
-
     @Override
     default T getScreenOpeningData(ServerPlayer serverPlayer) {
         return this.getMenuData(serverPlayer);
     }
+
+    @Shadow
+    T getMenuData(@Nullable ServerPlayer serverPlayer);
 }

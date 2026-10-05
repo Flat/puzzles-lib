@@ -27,8 +27,11 @@ abstract class CrossbowItemFabricMixin extends ProjectileWeaponItem {
     @Inject(method = "performShooting", at = @At("HEAD"), cancellable = true)
     public void performShooting(Level level, LivingEntity shooter, InteractionHand hand, ItemStack weapon, float power, float uncertainty, @Nullable LivingEntity targetOverride, CallbackInfo callback) {
         if (level instanceof ServerLevel && shooter instanceof Player player) {
-            EventResult result = FabricPlayerEvents.ARROW_LOOSE.invoker().onArrowLoose(player, weapon, level, MutableInt.fromValue(1), true);
-            if (result.isInterrupt()) callback.cancel();
+            EventResult result = FabricPlayerEvents.ARROW_LOOSE.invoker()
+                    .onArrowLoose(player, weapon, level, MutableInt.fromValue(1));
+            if (result.isInterrupt()) {
+                callback.cancel();
+            }
         }
     }
 }

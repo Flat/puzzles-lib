@@ -426,12 +426,9 @@ public final class NeoForgeEventInvokers {
         INSTANCE.register(ArrowLooseCallback.class,
                 ArrowLooseEvent.class,
                 (ArrowLooseCallback callback, ArrowLooseEvent event) -> {
-                    MutableInt charge = MutableInt.fromEvent(event::setCharge, event::getCharge);
-                    if (callback.onArrowLoose(event.getEntity(),
-                            event.getBow(),
-                            event.getLevel(),
-                            charge,
-                            event.hasAmmo()).isInterrupt()) {
+                    MutableInt timeHeld = MutableInt.fromEvent(event::setCharge, event::getCharge);
+                    if (callback.onArrowLoose(event.getEntity(), event.getBow(), event.getLevel(), timeHeld)
+                            .isInterrupt()) {
                         event.setCanceled(true);
                     }
                 });
