@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v26.3.10-mc26.3.x] - 2026-10-05
+
+### Added
+
+- Add `ModifyEnchantmentsCallback`
+- Add back `CalculateLivingVisibilityCallback`
+- Add back `GameplayContentContext::registerFuel` and `GameplayContentContext::registerCompostable` for registering fuel
+  values and composter values via data-driven context providers
+
+### Changed
+
+- Rework `BlockSetFamily` registration for wooden cooking times and flammability to use `GameplayContentContext`
+- Remove the `hasProjectile` argument from `ArrowLooseCallback`
+
+### Fixed
+
+- Fix `ComputeFovModifierCallback` receiving the FOV effect scale instead of the actual FOV modifier on Fabric
+- Fix NeoForge block state model baking with the updated model baking API
+
+### Removed
+
+- Remove the internal `Defaulted*` event value classes in favor of the `Mutable*` variants
+
 ## [v26.3.9-mc26.3.x] - 2026-09-30
 
 ### Changed
