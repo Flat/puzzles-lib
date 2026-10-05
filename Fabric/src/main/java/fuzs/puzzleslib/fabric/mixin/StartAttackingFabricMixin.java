@@ -22,7 +22,8 @@ abstract class StartAttackingFabricMixin {
     private static Object create(Object target, @Local(argsOnly = true) Mob mob, @Cancellable CallbackInfoReturnable<Boolean> callback) {
         MutableValue<LivingEntity> targetValue = MutableValue.fromValue((LivingEntity) target);
         EventResult result = FabricLivingEvents.LIVING_CHANGE_TARGET.invoker().onLivingChangeTarget(mob, targetValue);
-        if (result.isInterrupt()) {
+        // This is specifically used for setting a new target only, not for clearing an existing one; so we need to handle the null case as well.
+        if (result.isInterrupt() || targetValue.get() == null) {
             callback.setReturnValue(false);
         }
 
