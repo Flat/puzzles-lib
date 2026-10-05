@@ -175,6 +175,15 @@ transitive-accessible	method	net/minecraft/core/cauldron/CauldronInteractions	is
 transitive-accessible	method	net/minecraft/core/cauldron/CauldronInteractions	shulkerBoxInteraction	(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/item/ItemStack;)Lnet/minecraft/world/InteractionResult;
 transitive-accessible	field	net/minecraft/data/loot/EntityLootSubProvider	map	Ljava/util/Map;
 transitive-accessible	method	net/minecraft/data/loot/packs/VanillaBlockLoot	generate	()V
+transitive-accessible   field   net/minecraft/data/recipes/BrewingProvider  containers  Ljava/util/List;
+transitive-accessible   field   net/minecraft/data/recipes/BrewingProvider  containerTransformations    Ljava/util/List;
+transitive-accessible   field   net/minecraft/data/recipes/BrewingProvider  output  Lnet/minecraft/data/recipes/RecipeOutput;
+transitive-accessible   field   net/minecraft/data/recipes/BrewingProvider  potions Ljava/util/Set;
+transitive-accessible   class   net/minecraft/data/recipes/BrewingProvider$ContainerTransformation
+transitive-accessible   method  net/minecraft/data/recipes/BrewingProvider$ContainerTransformation  <init>  (Lnet/minecraft/world/item/Item;Lnet/minecraft/world/item/Item;Lnet/minecraft/world/item/Item;)V
+transitive-accessible   method  net/minecraft/data/recipes/BrewingRecipeBuilder <init>  (Lnet/minecraft/world/item/crafting/PotionIngredient;Lnet/minecraft/world/item/crafting/PotionIngredient;Lnet/minecraft/world/item/ItemStackTemplate;)V
+transitive-accessible   method  net/minecraft/data/recipes/BrewingRecipeBuilder potionIngredient    (Lnet/minecraft/world/item/Item;Lnet/minecraft/core/Holder;)Lnet/minecraft/world/item/crafting/PotionIngredient;
+transitive-accessible   method  net/minecraft/data/recipes/BrewingRecipeBuilder potionOutput    (Lnet/minecraft/world/item/Item;Lnet/minecraft/core/Holder;)Lnet/minecraft/world/item/ItemStackTemplate;
 transitive-accessible   field	net/minecraft/data/recipes/RecipeProvider   items	Lnet/minecraft/core/HolderGetter;
 transitive-accessible   field	net/minecraft/data/recipes/RecipeProvider   trimPatterns    Lnet/minecraft/core/HolderGetter;
 transitive-accessible	method	net/minecraft/data/recipes/ShapedRecipeBuilder	<init>	(Lnet/minecraft/core/HolderGetter;Lnet/minecraft/data/recipes/RecipeCategory;Lnet/minecraft/world/item/ItemStackTemplate;)V
@@ -366,11 +375,6 @@ mutable	field	net/minecraft/core/component/DataComponentMap$Builder	map	Lit/unim
 accessible	method	net/minecraft/core/component/DataComponentMap$Builder	<init>	()V
 accessible	method	net/minecraft/core/registries/PatchedRegistry$LazyHolder    bindValue	(Ljava/lang/Object;)V
 accessible	field	net/minecraft/data/loot/BlockLootSubProvider	map	Ljava/util/Map;
-accessible  field   net/minecraft/data/recipes/BrewingProvider  containerTransformations    Ljava/util/List;
-accessible  field   net/minecraft/data/recipes/BrewingProvider  output  Lnet/minecraft/data/recipes/RecipeOutput;
-accessible  field   net/minecraft/data/recipes/BrewingProvider  potions Ljava/util/Set;
-accessible  class   net/minecraft/data/recipes/BrewingProvider$ContainerTransformation
-accessible  method  net/minecraft/data/recipes/BrewingProvider$ContainerTransformation  <init>  (Lnet/minecraft/world/item/Item;Lnet/minecraft/world/item/Item;Lnet/minecraft/world/item/Item;)V
 mutable	field	net/minecraft/data/recipes/RecipeProvider	items	Lnet/minecraft/core/HolderGetter;
 accessible	field	net/minecraft/data/recipes/RecipeProvider	output	Lnet/minecraft/data/recipes/RecipeOutput;
 mutable	field	net/minecraft/data/recipes/RecipeProvider	output	Lnet/minecraft/data/recipes/RecipeOutput;
